@@ -1,0 +1,82 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+class ARTryOnScreen extends StatelessWidget {
+  const ARTryOnScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'AR Try-On',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 24.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.camera_alt,
+              size: 80.w,
+              color: Colors.grey[400],
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'AR Try-On Camera',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'Try clothes virtually',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16.sp,
+              ),
+            ),
+            SizedBox(height: 32.h),
+            Container(
+              width: 200.w,
+              height: 50.h,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2ACAEA),
+                borderRadius: BorderRadius.circular(25.r),
+              ),
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25.r),
+                  ),
+                ),
+                child: Text(
+                  'Start Camera',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

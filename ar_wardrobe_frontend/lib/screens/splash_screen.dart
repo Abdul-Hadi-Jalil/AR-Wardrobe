@@ -1,6 +1,5 @@
+import 'package:ar_wardrobe_frontend/auth_state_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,14 +12,14 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigateToLogin();
+    _navigateToAuthStateScreen();
   }
 
-  _navigateToLogin() async {
+  Future<void> _navigateToAuthStateScreen() async {
     await Future.delayed(const Duration(seconds: 3));
     if (mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => const AuthStateScreen()),
       );
     }
   }
@@ -35,10 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             RichText(
               text: TextSpan(
-                style: TextStyle(
-                  fontSize: 48.sp,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
                 children: const [
                   TextSpan(
                     text: 'AR ',
@@ -54,19 +50,17 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                   TextSpan(
                     text: 'Wardrobe',
-                    style: TextStyle(
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(color: Colors.white),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 20),
             Text(
               'Try Before You Buy',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 18.sp,
+                fontSize: 18,
                 fontWeight: FontWeight.w300,
               ),
             ),

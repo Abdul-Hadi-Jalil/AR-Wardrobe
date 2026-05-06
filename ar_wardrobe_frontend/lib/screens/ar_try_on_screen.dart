@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ARTryOnScreen extends StatelessWidget {
   const ARTryOnScreen({super.key});
@@ -15,7 +14,7 @@ class ARTryOnScreen extends StatelessWidget {
           'AR Try-On',
           style: TextStyle(
             color: Colors.black,
-            fontSize: 24.sp,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -25,35 +24,28 @@ class ARTryOnScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.camera_alt,
-              size: 80.w,
-              color: Colors.grey[400],
-            ),
-            SizedBox(height: 16.h),
+            Icon(Icons.camera_alt, size: 80, color: Colors.grey[400]),
+            SizedBox(height: 16),
             Text(
               'AR Try-On Camera',
               style: TextStyle(
                 color: Colors.black,
-                fontSize: 20.sp,
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: 8),
             Text(
               'Try clothes virtually',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 16.sp,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
-            SizedBox(height: 32.h),
+            SizedBox(height: 32),
             Container(
-              width: 200.w,
-              height: 50.h,
+              width: 200,
+              height: 50,
               decoration: BoxDecoration(
                 color: const Color(0xFF2ACAEA),
-                borderRadius: BorderRadius.circular(25.r),
+                borderRadius: BorderRadius.circular(25),
               ),
               child: ElevatedButton(
                 onPressed: () {},
@@ -61,14 +53,14 @@ class ARTryOnScreen extends StatelessWidget {
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25.r),
+                    borderRadius: BorderRadius.circular(25),
                   ),
                 ),
                 child: Text(
                   'Start Camera',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16.sp,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

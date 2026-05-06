@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -8,82 +7,83 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      body: Column(
-        children: [
-          // Header Section with Profile
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFF2ACAEA),
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(30.r),
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header Section with Profile
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2ACAEA),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(30),
+                ),
+              ),
+              child: Column(
+                children: [
+                  SizedBox(height: 60),
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.person,
+                      size: 60,
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'NAME : XYZ',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'EMAIL: abc@gmail.com',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  SizedBox(height: 40),
+                ],
               ),
             ),
-            child: Column(
-              children: [
-                SizedBox(height: 60.h),
-                CircleAvatar(
-                  radius: 50.r,
-                  backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.person,
-                    size: 60.w,
-                    color: Colors.grey[400],
-                  ),
-                ),
-                SizedBox(height: 16.h),
-                Text(
-                  'NAME : XYZ',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  'EMAIL: abc@gmail.com',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                SizedBox(height: 40.h),
-              ],
-            ),
-          ),
 
-          // Stats Section
-          Container(
-            transform: Matrix4.translationValues(0, -20.h, 0),
-            margin: EdgeInsets.symmetric(horizontal: 20.w),
-            padding: EdgeInsets.all(20.w),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-              ],
+            // Stats Section
+            Container(
+              transform: Matrix4.translationValues(0, -20, 0),
+              margin: EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStatItem('Saved Items', '12'),
+                  _buildStatItem('Tried Items', '34'),
+                  _buildStatItem('Orders', '5'),
+                ],
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem('Saved Items', '12'),
-                _buildStatItem('Tried Items', '34'),
-                _buildStatItem('Orders', '5'),
-              ],
-            ),
-          ),
 
-          // Menu Items
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+            // Menu Items
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               child: Column(
                 children: [
                   _buildMenuItem(
@@ -92,41 +92,40 @@ class ProfileScreen extends StatelessWidget {
                     title: 'Saved Outfits',
                     onTap: () {},
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 16),
                   _buildMenuItem(
                     icon: Icons.shopping_bag,
                     iconColor: Colors.brown,
                     title: 'Orders',
                     onTap: () {},
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 16),
                   _buildMenuItem(
                     icon: Icons.settings,
                     iconColor: Colors.grey,
                     title: 'Settings',
                     onTap: () {},
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 16),
                   _buildMenuItem(
                     icon: Icons.lock,
                     iconColor: Colors.amber,
                     title: 'Privacy and Security',
                     onTap: () {},
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 16),
                   _buildMenuItem(
                     icon: Icons.logout,
                     iconColor: Colors.grey,
                     title: 'Logout',
                     onTap: () {},
                   ),
-                  const Spacer(),
-                  SizedBox(height: 100.h), // Bottom navigation padding
+                  SizedBox(height: 100), // Bottom padding
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -138,16 +137,16 @@ class ProfileScreen extends StatelessWidget {
           value,
           style: TextStyle(
             color: Colors.black,
-            fontSize: 24.sp,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 4.h),
+        SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
             color: Colors.grey[600],
-            fontSize: 14.sp,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -164,7 +163,7 @@ class ProfileScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -175,26 +174,26 @@ class ProfileScreen extends StatelessWidget {
       ),
       child: ListTile(
         leading: Container(
-          width: 40.w,
-          height: 40.h,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             color: iconColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8.r),
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: iconColor, size: 24.w),
+          child: Icon(icon, color: iconColor, size: 24),
         ),
         title: Text(
           title,
           style: TextStyle(
             color: Colors.black,
-            fontSize: 16.sp,
+            fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
           color: Colors.grey[400],
-          size: 16.w,
+          size: 16,
         ),
         onTap: onTap,
       ),

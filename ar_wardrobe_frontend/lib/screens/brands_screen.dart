@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'brand_products_screen.dart';
 
 class BrandsScreen extends StatelessWidget {
   const BrandsScreen({super.key});
@@ -39,7 +40,11 @@ class BrandsScreen extends StatelessWidget {
                     color: Colors.grey[400],
                     fontSize: 16.sp,
                   ),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[400], size: 24.w),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Colors.grey[400],
+                    size: 24.w,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.r),
                     borderSide: BorderSide.none,
@@ -52,7 +57,7 @@ class BrandsScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: 24.h),
-            
+
             // Brands Grid
             Expanded(
               child: GridView.builder(
@@ -78,7 +83,7 @@ class BrandsScreen extends StatelessWidget {
                     'REEBOK',
                     'KHAADI',
                   ];
-                  return _buildBrandCard(brands[index]);
+                  return _buildBrandCard(context, brands[index]);
                 },
               ),
             ),
@@ -89,51 +94,69 @@ class BrandsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBrandCard(String brandName) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+  Widget _buildBrandCard(BuildContext context, String brandName) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BrandProductsScreen(brandName: brandName),
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 60.w,
-            height: 60.h,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8.r),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            child: Icon(
-              Icons.branding_watermark,
-              size: 32.w,
-              color: Colors.grey[400],
-            ),
-          ),
-          SizedBox(height: 12.h),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.w),
-            child: Text(
-              brandName,
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 60.w,
+              height: 60.h,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8.r),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              child: brandName == 'LIMELIGHT'
+                  ? Padding(
+                      padding: EdgeInsets.all(8.r),
+                      child: Image.asset(
+                        'assets/shirts/shirt1.png',
+                        fit: BoxFit.contain,
+                      ),
+                    )
+                  : Icon(
+                      Icons.branding_watermark,
+                      size: 32.w,
+                      color: Colors.grey[400],
+                    ),
             ),
-          ),
-        ],
+            SizedBox(height: 12.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
+              child: Text(
+                brandName,
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

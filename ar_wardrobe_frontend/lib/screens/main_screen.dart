@@ -1,8 +1,8 @@
 import 'package:ar_wardrobe_frontend/screens/ar_try_on_screen.dart';
+import 'package:ar_wardrobe_frontend/screens/brands_screen.dart';
 import 'package:ar_wardrobe_frontend/screens/profile_screen.dart';
 import 'package:ar_wardrobe_frontend/screens/wardrobe_screen.dart';
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -15,7 +15,7 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    const HomeScreen(),
+    const BrandsScreen(),
     const WardrobeScreen(),
     const ARTryOnScreen(),
     const ProfileScreen(),
@@ -49,7 +49,7 @@ class _MainScreenState extends State<MainScreen> {
           unselectedItemColor: Colors.grey,
           elevation: 0,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.store), label: 'Brands'),
             BottomNavigationBarItem(
               icon: Icon(Icons.checkroom),
               label: 'Wardrobe',

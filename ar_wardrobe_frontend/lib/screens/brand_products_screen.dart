@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class BrandProductsScreen extends StatelessWidget {
-  const BrandProductsScreen({super.key});
+  final String brandName;
+
+  const BrandProductsScreen({super.key, required this.brandName});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +14,7 @@ class BrandProductsScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'NIKE',
+          brandName,
           style: TextStyle(
             color: Colors.black,
             fontSize: 24.sp,
@@ -39,7 +41,11 @@ class BrandProductsScreen extends StatelessWidget {
                     color: Colors.grey[400],
                     fontSize: 16.sp,
                   ),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[400], size: 24.w),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Colors.grey[400],
+                    size: 24.w,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.r),
                     borderSide: BorderSide.none,
@@ -52,7 +58,7 @@ class BrandProductsScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: 16.h),
-            
+
             // Filters Section
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +84,7 @@ class BrandProductsScreen extends StatelessWidget {
               ],
             ),
             SizedBox(height: 24.h),
-            
+
             // Products Grid
             Expanded(
               child: GridView.builder(
@@ -92,7 +98,11 @@ class BrandProductsScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final products = [
                     {'name': 'Casual Tee', 'price': '\$50'},
-                    {'name': 'Air Zoom Sneakers', 'price': '\$200'},
+                    {
+                      'name': 'Air Zoom Sneakers',
+                      'price': '\$200',
+                      'image': 'assets/j.clothes/shirts/shirt_j.jpg',
+                    },
                     {'name': 'Running Jacket', 'price': '\$900'},
                     {'name': 'Tack Suit', 'price': '\$70'},
                     {'name': 'Sports Shoes', 'price': '\$120'},
@@ -101,7 +111,11 @@ class BrandProductsScreen extends StatelessWidget {
                     {'name': 'Windbreaker', 'price': '\$85'},
                   ];
                   final product = products[index];
-                  return _buildProductCard(product['name']!, product['price']!);
+                  return _buildProductCard(
+                    product['name']!,
+                    product['price']!,
+                    imagePath: product['image'],
+                  );
                 },
               ),
             ),
@@ -130,7 +144,7 @@ class BrandProductsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProductCard(String name, String price) {
+  Widget _buildProductCard(String name, String price, {String? imagePath}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -153,11 +167,12 @@ class BrandProductsScreen extends StatelessWidget {
               borderRadius: BorderRadius.vertical(top: Radius.circular(12.r)),
               color: Colors.grey[200],
             ),
-            child: Icon(
-              Icons.shopping_bag,
-              size: 48.w,
-              color: Colors.grey[400],
-            ),
+            child: imagePath != null
+                ? Padding(
+                    padding: EdgeInsets.all(12.r),
+                    child: Image.asset(imagePath, fit: BoxFit.contain),
+                  )
+                : Icon(Icons.shopping_bag, size: 48.w, color: Colors.grey[400]),
           ),
           Expanded(
             child: Padding(

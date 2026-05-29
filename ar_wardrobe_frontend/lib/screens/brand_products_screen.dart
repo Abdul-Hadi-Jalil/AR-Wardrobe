@@ -1,3 +1,4 @@
+import 'package:ar_wardrobe_frontend/models/clothing_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -101,7 +102,7 @@ class BrandProductsScreen extends StatelessWidget {
                     {
                       'name': 'Air Zoom Sneakers',
                       'price': '\$200',
-                      'image': 'assets/j.clothes/shirts/shirt_j.jpg',
+                      'image': ClothingItem.jClothesShirtPath,
                     },
                     {'name': 'Running Jacket', 'price': '\$900'},
                     {'name': 'Tack Suit', 'price': '\$70'},

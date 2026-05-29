@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../state/tryon_state.dart';
+import 'camera_screen.dart';
 
 class ARTryOnScreen extends StatelessWidget {
   const ARTryOnScreen({super.key});
@@ -10,7 +14,7 @@ class ARTryOnScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
+        title: const Text(
           'AR Try-On',
           style: TextStyle(
             color: Colors.black,
@@ -25,8 +29,8 @@ class ARTryOnScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.camera_alt, size: 80, color: Colors.grey[400]),
-            SizedBox(height: 16),
-            Text(
+            const SizedBox(height: 16),
+            const Text(
               'AR Try-On Camera',
               style: TextStyle(
                 color: Colors.black,
@@ -34,12 +38,12 @@ class ARTryOnScreen extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Try clothes virtually',
               style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
             Container(
               width: 200,
               height: 50,
@@ -48,7 +52,16 @@ class ARTryOnScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(25),
               ),
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ChangeNotifierProvider(
+                        create: (_) => TryOnState(),
+                        child: const CameraScreen(),
+                      ),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
@@ -56,7 +69,7 @@ class ARTryOnScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(25),
                   ),
                 ),
-                child: Text(
+                child: const Text(
                   'Start Camera',
                   style: TextStyle(
                     color: Colors.white,

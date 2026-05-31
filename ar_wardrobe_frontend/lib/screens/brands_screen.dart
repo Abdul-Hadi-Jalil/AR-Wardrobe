@@ -13,11 +13,20 @@ class BrandsScreen extends StatefulWidget {
 
 class _BrandsScreenState extends State<BrandsScreen> {
   late Future<List<BrandInfo>> _brandsFuture;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _brandsFuture = BrandCatalog.loadBrands();
+  }
+
+  List<BrandInfo> _filterBrands(List<BrandInfo> brands) {
+    if (_searchQuery.isEmpty) return brands;
+    final query = _searchQuery.toLowerCase();
+    return brands
+        .where((brand) => brand.displayName.toLowerCase().contains(query))
+        .toList();
   }
 
   @override
@@ -48,6 +57,7 @@ class _BrandsScreenState extends State<BrandsScreen> {
                 border: Border.all(color: Colors.grey[300]!),
               ),
               child: TextField(
+                onChanged: (value) => setState(() => _searchQuery = value),
                 decoration: InputDecoration(
                   hintText: 'Search brands...',
                   hintStyle: TextStyle(
@@ -77,39 +87,50 @@ class _BrandsScreenState extends State<BrandsScreen> {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
-                      child: CircularProgressIndicator(color: Color(0xFF2ACAEA)),
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF2ACAEA),
+                      ),
                     );
                   }
                   if (snapshot.hasError) {
                     return Center(
                       child: Text(
                         'Could not load brands',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 16.sp),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 16.sp,
+                        ),
                       ),
                     );
                   }
 
-                  final brands = snapshot.data ?? [];
+                  final brands = _filterBrands(snapshot.data ?? []);
                   if (brands.isEmpty) {
                     return Center(
                       child: Text(
-                        'Add brand folders under assets/brand_clothes/',
+                        _searchQuery.isEmpty
+                            ? 'Add logos to assets/brand_logos/'
+                            : 'No brands match your search',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14.sp,
+                        ),
                       ),
                     );
                   }
 
                   return GridView.builder(
+                    padding: EdgeInsets.only(bottom: 24.h),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 12.w,
                       mainAxisSpacing: 12.h,
-                      childAspectRatio: 1.2,
+                      childAspectRatio: 0.95,
                     ),
                     itemCount: brands.length,
                     itemBuilder: (context, index) {
-                      return _buildBrandCard(context, brands[index]);
+                      return _BrandLogoCard(brand: brands[index]);
                     },
                   );
                 },
@@ -120,74 +141,73 @@ class _BrandsScreenState extends State<BrandsScreen> {
       ),
     );
   }
+}
 
-  Widget _buildBrandCard(BuildContext context, BrandInfo brand) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BrandProductsScreen(brandId: brand.id),
+class _BrandLogoCard extends StatelessWidget {
+  const _BrandLogoCard({required this.brand});
+
+  final BrandInfo brand;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12.r),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BrandProductsScreen(brandId: brand.id),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12.r),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 60.w,
-              height: 60.h,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: brand.logoAsset != null
-                  ? Padding(
-                      padding: EdgeInsets.all(8.r),
-                      child: Image.asset(
-                        brand.logoAsset!,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.branding_watermark,
-                          size: 32.w,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                    )
-                  : Icon(
-                      Icons.branding_watermark,
-                      size: 32.w,
-                      color: Colors.grey[400],
-                    ),
-            ),
-            SizedBox(height: 12.h),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.w),
-              child: Text(
-                brand.displayName,
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
+          child: Column(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.all(16.r),
+                  child: Image.asset(
+                    brand.logoAsset,
+                    fit: BoxFit.contain,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(12.r),
+                  ),
+                ),
+                child: Text(
+                  brand.displayName,
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

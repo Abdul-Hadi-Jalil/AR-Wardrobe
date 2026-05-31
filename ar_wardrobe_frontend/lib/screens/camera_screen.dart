@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../models/clothing_item.dart';
 import '../painters/overlay_painter.dart';
 import '../services/camera_service.dart';
+import '../services/face_detection_service.dart';
 import '../services/pose_detection_service.dart';
 import '../state/tryon_state.dart';
 
@@ -23,6 +24,7 @@ class CameraScreen extends StatefulWidget {
 
 class _CameraScreenState extends State<CameraScreen> {
   final CameraService _cameraService = CameraService();
+  final FaceDetectionService _faceService = FaceDetectionService();
   final PoseDetectionService _poseService = PoseDetectionService();
 
   ui.Image? _clothingImage;
@@ -92,19 +94,46 @@ class _CameraScreenState extends State<CameraScreen> {
       return;
     }
 
+    final orientation = controller.value.deviceOrientation;
+
+    if (widget.item.usesFace) {
+      final face = await _faceService.processFrame(
+        image: image,
+        camera: camera,
+        deviceOrientation: orientation,
+      );
+      if (face != null && mounted) {
+        tryOn.updateFace(face);
+      }
+      return;
+    }
+
     final pose = await _poseService.processFrame(
       image: image,
       camera: camera,
-      deviceOrientation: controller.value.deviceOrientation,
+      deviceOrientation: orientation,
     );
     if (pose != null && mounted) {
       tryOn.updatePose(pose);
     }
   }
 
+  String _trackingHint(TryOnState tryOn) {
+    if (tryOn.isTracking) {
+      return 'Trying on: ${widget.item.name}';
+    }
+
+    return switch (widget.item.category) {
+      ClothingCategory.glasses => 'Point camera at your face for glasses',
+      ClothingCategory.hats => 'Point camera at your face for hat placement',
+      ClothingCategory.shirts => 'Point camera at your upper body',
+    };
+  }
+
   @override
   void dispose() {
     _cameraService.dispose();
+    _faceService.dispose();
     _poseService.dispose();
     super.dispose();
   }
@@ -177,9 +206,7 @@ class _CameraScreenState extends State<CameraScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      tryOn.currentPose != null
-                          ? 'Trying on: ${widget.item.name}'
-                          : 'Point camera at your upper body',
+                      _trackingHint(tryOn),
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.white, fontSize: 13),
                     ),

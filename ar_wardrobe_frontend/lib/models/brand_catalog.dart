@@ -12,14 +12,29 @@ class BrandInfo {
 
   final String id;
   final String displayName;
-  final String? logoAsset;
+  final String logoAsset;
   final List<ClothingItem> products;
 }
 
 class BrandCatalog {
   BrandCatalog._();
 
+  static const _logosRoot = 'assets/brand_logos/';
   static const _clothesRoot = 'assets/brand_clothes/';
+
+  /// Fallback paths for each brand folder. Ensures products load even when the
+  /// asset manifest omits nested or webp files. Add entries when new brands
+  /// are added under assets/brand_clothes/.
+  static const _knownBrandAssets = <String, List<String>>{
+    'lime_light': [
+      'assets/brand_clothes/lime_light/shirt_j.jpg',
+      'assets/brand_clothes/lime_light/neon_limelight.jpg',
+    ],
+    'outfitters': [
+      'assets/brand_clothes/outfitters/peach_shirt.webp',
+      'assets/brand_clothes/outfitters/shield_sunglasses.webp',
+    ],
+  };
 
   static const _displayNames = <String, String>{
     'lime_light': 'LIMELIGHT',
@@ -32,52 +47,24 @@ class BrandCatalog {
     'levis': "Levi's",
   };
 
-  static const _logos = <String, String>{
-    'lime_light': 'assets/brand_logos/lime_light.png',
-    'outfitters': 'assets/brand_logos/outfitters.png',
-    'chinyere': 'assets/brand_logos/chinyere.png',
-    'ideas': 'assets/brand_logos/ideas.jpg',
-    'bonanza': 'assets/brand_logos/bonanza.jpg',
-    'alkaram': 'assets/brand_logos/alkaram.jpg',
-    'nike': 'assets/brand_logos/nike.png',
-    'levis': 'assets/brand_logos/levis.jpg',
-  };
-
   static Future<List<BrandInfo>> loadBrands() async {
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
-    final assets = manifest
+    final productsByBrand = _groupProductsByBrand(manifest);
+
+    final logoAssets = manifest
         .listAssets()
-        .where((path) => path.startsWith(_clothesRoot))
+        .where((path) => path.startsWith(_logosRoot))
         .where(_isImageAsset)
         .toList()
       ..sort();
 
-    final grouped = <String, List<String>>{};
-    for (final path in assets) {
-      final relative = path.substring(_clothesRoot.length);
-      final slash = relative.indexOf('/');
-      if (slash <= 0) continue;
-      final brandId = relative.substring(0, slash);
-      grouped.putIfAbsent(brandId, () => []).add(path);
-    }
-
-    return grouped.entries.map((entry) {
-      final brandId = entry.key;
-      final products = entry.value.map((path) {
-        final fileName = path.split('/').last;
-        return ClothingItem(
-          id: path,
-          name: nameFromFile(fileName),
-          assetPath: path,
-          brandId: brandId,
-        );
-      }).toList();
-
+    return logoAssets.map((logoPath) {
+      final brandId = _brandIdFromLogoPath(logoPath);
       return BrandInfo(
         id: brandId,
         displayName: displayNameFor(brandId),
-        logoAsset: _logos[brandId],
-        products: products,
+        logoAsset: logoPath,
+        products: productsByBrand[brandId] ?? const [],
       );
     }).toList()
       ..sort((a, b) => a.displayName.compareTo(b.displayName));
@@ -91,11 +78,68 @@ class BrandCatalog {
     return null;
   }
 
+  static Map<String, List<ClothingItem>> _groupProductsByBrand(
+    AssetManifest manifest,
+  ) {
+    final manifestPaths = manifest
+        .listAssets()
+        .where((path) => path.startsWith(_clothesRoot))
+        .where(_isImageAsset)
+        .toSet();
+
+    final grouped = <String, List<ClothingItem>>{};
+
+    void addProduct(String brandId, String path) {
+      final items = grouped.putIfAbsent(brandId, () => []);
+      if (items.any((item) => item.assetPath == path)) return;
+      items.add(
+        ClothingItem(
+          id: path,
+          name: nameFromFile(path.split('/').last),
+          assetPath: path,
+          brandId: brandId,
+          category: ClothingItem.categoryFromAssetPath(path),
+        ),
+      );
+    }
+
+    for (final path in manifestPaths) {
+      final brandId = _brandIdFromClothesPath(path);
+      if (brandId == null) continue;
+      addProduct(brandId, path);
+    }
+
+    for (final entry in _knownBrandAssets.entries) {
+      for (final path in entry.value) {
+        addProduct(entry.key, path);
+      }
+    }
+
+    return grouped;
+  }
+
+  static String? _brandIdFromClothesPath(String path) {
+    if (!path.startsWith(_clothesRoot)) return null;
+    final relative = path.substring(_clothesRoot.length);
+    final slash = relative.indexOf('/');
+    if (slash <= 0) return null;
+    return relative.substring(0, slash);
+  }
+
+  static String _brandIdFromLogoPath(String logoPath) {
+    final fileName = logoPath.split('/').last;
+    return fileName.split('.').first;
+  }
+
   static String displayNameFor(String brandId) {
     return _displayNames[brandId] ??
         brandId
             .split('_')
-            .map((part) => part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1)}')
+            .map(
+              (part) => part.isEmpty
+                  ? part
+                  : '${part[0].toUpperCase()}${part.substring(1)}',
+            )
             .join(' ');
   }
 
@@ -103,7 +147,11 @@ class BrandCatalog {
     final base = fileName.split('.').first;
     return base
         .split('_')
-        .map((part) => part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1)}')
+        .map(
+          (part) => part.isEmpty
+              ? part
+              : '${part[0].toUpperCase()}${part.substring(1)}',
+        )
         .join(' ');
   }
 

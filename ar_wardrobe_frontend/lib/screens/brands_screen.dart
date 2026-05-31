@@ -1,9 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import '../models/brand_catalog.dart';
 import 'brand_products_screen.dart';
 
-class BrandsScreen extends StatelessWidget {
+class BrandsScreen extends StatefulWidget {
   const BrandsScreen({super.key});
+
+  @override
+  State<BrandsScreen> createState() => _BrandsScreenState();
+}
+
+class _BrandsScreenState extends State<BrandsScreen> {
+  late Future<List<BrandInfo>> _brandsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _brandsFuture = BrandCatalog.loadBrands();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +41,6 @@ class BrandsScreen extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         child: Column(
           children: [
-            // Search Bar
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -57,50 +71,63 @@ class BrandsScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: 24.h),
-
-            // Brands Grid
             Expanded(
-              child: GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12.w,
-                  mainAxisSpacing: 12.h,
-                  childAspectRatio: 1.2,
-                ),
-                itemCount: 12,
-                itemBuilder: (context, index) {
-                  final brands = [
-                    'CHINYERE',
-                    'Ideas by Gul Ahmed',
-                    'BONANZA SATRANGI',
-                    'LIMELIGHT',
-                    'alkaramstudio',
-                    'NIKE',
-                    'Outfitters',
-                    'Levi\'s',
-                    'ADIDAS',
-                    'PUMA',
-                    'REEBOK',
-                    'KHAADI',
-                  ];
-                  return _buildBrandCard(context, brands[index]);
+              child: FutureBuilder<List<BrandInfo>>(
+                future: _brandsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Color(0xFF2ACAEA)),
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'Could not load brands',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16.sp),
+                      ),
+                    );
+                  }
+
+                  final brands = snapshot.data ?? [];
+                  if (brands.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'Add brand folders under assets/brand_clothes/',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
+                      ),
+                    );
+                  }
+
+                  return GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12.w,
+                      mainAxisSpacing: 12.h,
+                      childAspectRatio: 1.2,
+                    ),
+                    itemCount: brands.length,
+                    itemBuilder: (context, index) {
+                      return _buildBrandCard(context, brands[index]);
+                    },
+                  );
                 },
               ),
             ),
-            SizedBox(height: 100.h), // Bottom navigation padding
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBrandCard(BuildContext context, String brandName) {
+  Widget _buildBrandCard(BuildContext context, BrandInfo brand) {
     return InkWell(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => BrandProductsScreen(brandName: brandName),
+            builder: (context) => BrandProductsScreen(brandId: brand.id),
           ),
         );
       },
@@ -110,7 +137,7 @@ class BrandsScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -126,12 +153,17 @@ class BrandsScreen extends StatelessWidget {
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(8.r),
               ),
-              child: brandName == 'LIMELIGHT'
+              child: brand.logoAsset != null
                   ? Padding(
                       padding: EdgeInsets.all(8.r),
                       child: Image.asset(
-                        'assets/shirts/shirt1.png',
+                        brand.logoAsset!,
                         fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Icon(
+                          Icons.branding_watermark,
+                          size: 32.w,
+                          color: Colors.grey[400],
+                        ),
                       ),
                     )
                   : Icon(
@@ -144,7 +176,7 @@ class BrandsScreen extends StatelessWidget {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 8.w),
               child: Text(
-                brandName,
+                brand.displayName,
                 style: TextStyle(
                   color: Colors.black87,
                   fontSize: 14.sp,

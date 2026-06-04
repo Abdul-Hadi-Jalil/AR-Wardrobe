@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../models/cart_item.dart';
+import '../services/firestore_service.dart';
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
+
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  final _firestoreService = FirestoreService();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'My cart',
+          'Cart',
           style: TextStyle(
             color: Colors.black,
             fontSize: 24.sp,
@@ -21,233 +30,241 @@ class CartScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12.w,
-                  mainAxisSpacing: 12.h,
-                  childAspectRatio: 0.8,
-                ),
-                itemCount: 4,
-                itemBuilder: (context, index) {
-                  final products = [
-                    {'name': 'Casual Tee', 'price': '\$50', 'brand': 'Nike'},
-                    {'name': 'Air Zoom Sneakers', 'price': '\$200', 'brand': 'Nike'},
-                    {'name': 'Running Jacket', 'price': '\$900', 'brand': 'Nike'},
-                    {'name': 'Tack Suit', 'price': '\$70', 'brand': 'Nike'},
-                  ];
-                  final product = products[index];
-                  return _buildProductCard(
-                    product['name']!,
-                    product['price']!,
-                    product['brand']!,
-                  );
-                },
+      body: StreamBuilder<List<CartItem>>(
+        stream: _firestoreService.getCartItems(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF2ACAEA)),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error loading cart',
+                style: TextStyle(color: Colors.grey[600], fontSize: 16.sp),
               ),
-            ),
-          ),
-          
-          // Summary Section
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-            decoration: BoxDecoration(
-              color: Colors.grey[800],
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Subtotal:',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
+            );
+          }
+
+          final cartItems = snapshot.data ?? [];
+          if (cartItems.isEmpty) {
+            return Center(
+              child: Text(
+                'Your cart is empty\nAdd items to get started',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[600], fontSize: 16.sp),
+              ),
+            );
+          }
+
+          int total = cartItems.fold(0, (sum, item) => sum + (item.quantity));
+
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  padding: EdgeInsets.all(16.w),
+                  itemCount: cartItems.length,
+                  itemBuilder: (context, index) {
+                    final item = cartItems[index];
+                    return _CartItemCard(
+                      item: item,
+                      onQuantityChanged: (newQuantity) async {
+                        if (newQuantity <= 0) {
+                          await _firestoreService.removeFromCart(item.id);
+                        } else {
+                          await _firestoreService.updateCartItemQuantity(
+                            item.id,
+                            newQuantity,
+                          );
+                        }
+                      },
+                      onDelete: () async {
+                        await _firestoreService.removeFromCart(item.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('${item.name} removed from cart')),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
                     ),
-                    Text(
-                      '\$118',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w400,
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total Items:',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Text(
+                          '$total',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16.h),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48.h,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Proceeding to checkout...')),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2ACAEA),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                        ),
+                        child: Text(
+                          'Checkout',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 8.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Tax:',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      '\$5',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Total:',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      '\$123',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16.h),
-                Container(
-                  width: double.infinity,
-                  height: 56.h,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2ACAEA),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                    child: Text(
-                      'Proceed to Checkout',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20.h), // Bottom navigation padding
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
+}
 
-  Widget _buildProductCard(String name, String price, String brand) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.grey[300]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 140.h,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12.r)),
-              color: Colors.grey[200],
+class _CartItemCard extends StatelessWidget {
+  final CartItem item;
+  final Function(int) onQuantityChanged;
+  final VoidCallback onDelete;
+
+  const _CartItemCard({
+    required this.item,
+    required this.onQuantityChanged,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 12.h),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+      child: Padding(
+        padding: EdgeInsets.all(12.w),
+        child: Row(
+          children: [
+            Container(
+              width: 80.w,
+              height: 80.w,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8.r),
+                color: Colors.grey[100],
+              ),
+              child: Image.asset(
+                item.assetPath,
+                fit: BoxFit.cover,
+              ),
             ),
-            child: Icon(
-              Icons.shopping_bag,
-              size: 48.w,
-              color: Colors.grey[400],
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(12.w),
+            SizedBox(width: 12.w),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Text(
+                    item.name,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    item.brandId.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Row(
                     children: [
-                      Text(
-                        name,
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(4.r),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        child: Row(
+                          children: [
+                            InkWell(
+                              onTap: () =>
+                                  onQuantityChanged(item.quantity - 1),
+                              child: Padding(
+                                padding: EdgeInsets.all(4.w),
+                                child: Icon(Icons.remove,
+                                    size: 16.sp, color: Colors.grey),
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8.w),
+                              child: Text(
+                                '${item.quantity}',
+                                style: TextStyle(fontSize: 12.sp),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () =>
+                                  onQuantityChanged(item.quantity + 1),
+                              child: Padding(
+                                padding: EdgeInsets.all(4.w),
+                                child: Icon(Icons.add,
+                                    size: 16.sp, color: Colors.grey),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        price,
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Spacer(),
+                      InkWell(
+                        onTap: onDelete,
+                        child: Icon(Icons.delete_outline,
+                            size: 18.sp, color: Colors.red),
                       ),
                     ],
-                  ),
-                  Container(
-                    width: double.infinity,
-                    height: 32.h,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(6.r),
-                      border: Border.all(color: const Color(0xFF2ACAEA)),
-                    ),
-                    child: Center(
-                      child: Text(
-                        brand,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

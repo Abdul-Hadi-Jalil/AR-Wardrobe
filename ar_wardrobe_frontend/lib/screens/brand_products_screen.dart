@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:uuid/uuid.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class BrandProductsScreen extends StatelessWidget {
-  const BrandProductsScreen({super.key});
+import '../models/brand_catalog.dart';
+import '../models/clothing_item.dart';
+import '../models/cart_item.dart';
+import '../models/saved_outfit.dart';
+import '../services/firestore_service.dart';
+import 'camera_screen.dart';
+
+class BrandProductsScreen extends StatefulWidget {
+  const BrandProductsScreen({super.key, required this.brandId});
+
+  final String brandId;
+
+  @override
+  State<BrandProductsScreen> createState() => _BrandProductsScreenState();
+}
+
+class _BrandProductsScreenState extends State<BrandProductsScreen> {
+  late Future<BrandInfo?> _brandFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _brandFuture = BrandCatalog.loadBrand(widget.brandId);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,217 +35,320 @@ class BrandProductsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'NIKE',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
-          ),
+        title: FutureBuilder<BrandInfo?>(
+          future: _brandFuture,
+          builder: (context, snapshot) {
+            final name =
+                snapshot.data?.displayName ??
+                BrandCatalog.displayNameFor(widget.brandId);
+            return Text(
+              name,
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 24.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            );
+          },
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
-        child: Column(
-          children: [
-            // Search Bar
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  hintStyle: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 16.sp,
-                  ),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[400], size: 24.w),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 16.h,
-                  ),
+      body: FutureBuilder<BrandInfo?>(
+        future: _brandFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF2ACAEA)),
+            );
+          }
+
+          final brand = snapshot.data;
+          if (brand == null || brand.products.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: EdgeInsets.all(24.w),
+                child: Text(
+                  'No clothes found for this brand.\nAdd images to assets/brand_clothes/${widget.brandId}/',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 16.sp),
                 ),
               ),
-            ),
-            SizedBox(height: 16.h),
-            
-            // Filters Section
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Filters',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                Row(
-                  children: [
-                    _buildFilterButton('Shoes'),
-                    SizedBox(width: 12.w),
-                    _buildFilterButton('Jackets'),
-                    SizedBox(width: 12.w),
-                    _buildFilterButton('Pants'),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: 24.h),
-            
-            // Products Grid
-            Expanded(
-              child: GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12.w,
-                  mainAxisSpacing: 12.h,
-                  childAspectRatio: 0.75,
-                ),
-                itemCount: 8,
-                itemBuilder: (context, index) {
-                  final products = [
-                    {'name': 'Casual Tee', 'price': '\$50'},
-                    {'name': 'Air Zoom Sneakers', 'price': '\$200'},
-                    {'name': 'Running Jacket', 'price': '\$900'},
-                    {'name': 'Tack Suit', 'price': '\$70'},
-                    {'name': 'Sports Shoes', 'price': '\$120'},
-                    {'name': 'Training Tee', 'price': '\$45'},
-                    {'name': 'Basketball Shoes', 'price': '\$180'},
-                    {'name': 'Windbreaker', 'price': '\$85'},
-                  ];
-                  final product = products[index];
-                  return _buildProductCard(product['name']!, product['price']!);
-                },
+            );
+          }
+
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: GridView.builder(
+              padding: EdgeInsets.only(top: 16.h, bottom: 100.h),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12.w,
+                mainAxisSpacing: 12.h,
+                childAspectRatio: 0.75,
               ),
+              itemCount: brand.products.length,
+              itemBuilder: (context, index) {
+                final product = brand.products[index];
+                return _ProductCard(
+                  product: product,
+                  onTryOn: () => openTryOnCamera(context, product),
+                  onAddToCart: () => _addToCart(context, product),
+                  onSaveOutfit: () => _saveOutfit(context, product),
+                );
+              },
             ),
-            SizedBox(height: 100.h), // Bottom navigation padding
+          );
+        },
+      ),
+    );
+  }
+
+  void _addToCart(BuildContext context, ClothingItem product) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please login to add items to cart'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final firestoreService = FirestoreService();
+    try {
+      final cartItem = CartItem(
+        id: '${const Uuid().v4()}',
+        productId: product.id,
+        name: product.name,
+        assetPath: product.assetPath,
+        brandId: product.brandId,
+        quantity: 1,
+        addedAt: DateTime.now(),
+      );
+      await firestoreService.addToCart(cartItem);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${product.name} added to cart'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding to cart: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _saveOutfit(BuildContext context, ClothingItem product) async {
+    print('DEBUG: Save outfit button pressed for product: ${product.name}');
+    final user = FirebaseAuth.instance.currentUser;
+    print('DEBUG: Current user: ${user?.email ?? "null"}');
+    if (user == null) {
+      print('DEBUG: User not authenticated, showing login prompt');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please login to save outfits'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final firestoreService = FirestoreService();
+    try {
+      print('DEBUG: Creating outfit object');
+      final outfit = SavedOutfit(
+        id: '${const Uuid().v4()}',
+        outfitName: product.name,
+        productIds: [product.id],
+        productAssets: [product.assetPath],
+        savedAt: DateTime.now(),
+      );
+      print('DEBUG: Attempting to save outfit to Firestore');
+      await firestoreService.addToSavedOutfits(outfit);
+      print('DEBUG: Outfit saved successfully');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${product.name} saved as outfit'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('DEBUG: Error saving outfit: $e');
+      print('DEBUG: Error type: ${e.runtimeType}');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving outfit: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+}
+
+class _ProductCard extends StatelessWidget {
+  const _ProductCard({
+    required this.product,
+    required this.onTryOn,
+    required this.onAddToCart,
+    required this.onSaveOutfit,
+  });
+
+  final ClothingItem product;
+  final VoidCallback onTryOn;
+  final VoidCallback onAddToCart;
+  final VoidCallback onSaveOutfit;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTryOn,
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFilterButton(String title) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2ACAEA),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProductCard(String name, String price) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 140.h,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12.r)),
-              color: Colors.grey[200],
-            ),
-            child: Icon(
-              Icons.shopping_bag,
-              size: 48.w,
-              color: Colors.grey[400],
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(12.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        price,
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(12.r),
                   ),
-                  Container(
-                    width: double.infinity,
-                    height: 32.h,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2ACAEA),
-                      borderRadius: BorderRadius.circular(6.r),
-                    ),
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                      child: Text(
-                        'Try On',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  color: Colors.grey[100],
+                ),
+                padding: EdgeInsets.all(12.r),
+                child: Image.asset(product.assetPath, fit: BoxFit.contain),
               ),
             ),
-          ),
-        ],
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Spacer(),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 32.h,
+                      child: ElevatedButton(
+                        onPressed: onTryOn,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2ACAEA),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6.r),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          'Try On',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 28.h,
+                            child: ElevatedButton(
+                              onPressed: onAddToCart,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF2ACAEA),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6.r),
+                                  side: const BorderSide(
+                                    color: Color(0xFF2ACAEA),
+                                  ),
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                              child: Text(
+                                'Add to Cart',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: SizedBox(
+                            height: 28.h,
+                            child: ElevatedButton(
+                              onPressed: onSaveOutfit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF2ACAEA),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6.r),
+                                  side: const BorderSide(
+                                    color: Color(0xFF2ACAEA),
+                                  ),
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                              child: Text(
+                                'Saved Outfits',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

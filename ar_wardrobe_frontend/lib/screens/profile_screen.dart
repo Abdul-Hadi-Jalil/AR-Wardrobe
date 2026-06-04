@@ -1,4 +1,6 @@
 import 'package:ar_wardrobe_frontend/screens/edit_profile_screen.dart';
+import 'package:ar_wardrobe_frontend/screens/cart_screen.dart';
+import 'package:ar_wardrobe_frontend/screens/saved_outfits_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -108,10 +110,31 @@ class ProfileScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       _buildMenuItem(
+                        icon: Icons.shopping_cart,
+                        iconColor: Colors.blue,
+                        title: 'Cart',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CartScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      SizedBox(height: 16),
+                      _buildMenuItem(
                         icon: Icons.favorite,
                         iconColor: Colors.red,
                         title: 'Saved Outfits',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SavedOutfitsScreen(),
+                            ),
+                          );
+                        },
                       ),
                       SizedBox(height: 16),
                       _buildMenuItem(

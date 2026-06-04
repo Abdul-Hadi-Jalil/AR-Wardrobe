@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:uuid/uuid.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/brand_catalog.dart';
 import '../models/clothing_item.dart';
+import '../models/cart_item.dart';
+import '../models/saved_outfit.dart';
+import '../services/firestore_service.dart';
 import 'camera_screen.dart';
 
 class BrandProductsScreen extends StatefulWidget {
@@ -33,7 +38,8 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
         title: FutureBuilder<BrandInfo?>(
           future: _brandFuture,
           builder: (context, snapshot) {
-            final name = snapshot.data?.displayName ??
+            final name =
+                snapshot.data?.displayName ??
                 BrandCatalog.displayNameFor(widget.brandId);
             return Text(
               name,
@@ -86,6 +92,8 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
                 return _ProductCard(
                   product: product,
                   onTryOn: () => openTryOnCamera(context, product),
+                  onAddToCart: () => _addToCart(context, product),
+                  onSaveOutfit: () => _saveOutfit(context, product),
                 );
               },
             ),
@@ -94,13 +102,114 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
       ),
     );
   }
+
+  void _addToCart(BuildContext context, ClothingItem product) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please login to add items to cart'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final firestoreService = FirestoreService();
+    try {
+      final cartItem = CartItem(
+        id: '${const Uuid().v4()}',
+        productId: product.id,
+        name: product.name,
+        assetPath: product.assetPath,
+        brandId: product.brandId,
+        quantity: 1,
+        addedAt: DateTime.now(),
+      );
+      await firestoreService.addToCart(cartItem);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${product.name} added to cart'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding to cart: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _saveOutfit(BuildContext context, ClothingItem product) async {
+    print('DEBUG: Save outfit button pressed for product: ${product.name}');
+    final user = FirebaseAuth.instance.currentUser;
+    print('DEBUG: Current user: ${user?.email ?? "null"}');
+    if (user == null) {
+      print('DEBUG: User not authenticated, showing login prompt');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please login to save outfits'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final firestoreService = FirestoreService();
+    try {
+      print('DEBUG: Creating outfit object');
+      final outfit = SavedOutfit(
+        id: '${const Uuid().v4()}',
+        outfitName: product.name,
+        productIds: [product.id],
+        productAssets: [product.assetPath],
+        savedAt: DateTime.now(),
+      );
+      print('DEBUG: Attempting to save outfit to Firestore');
+      await firestoreService.addToSavedOutfits(outfit);
+      print('DEBUG: Outfit saved successfully');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${product.name} saved as outfit'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('DEBUG: Error saving outfit: $e');
+      print('DEBUG: Error type: ${e.runtimeType}');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving outfit: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 }
 
 class _ProductCard extends StatelessWidget {
-  const _ProductCard({required this.product, required this.onTryOn});
+  const _ProductCard({
+    required this.product,
+    required this.onTryOn,
+    required this.onAddToCart,
+    required this.onSaveOutfit,
+  });
 
   final ClothingItem product;
   final VoidCallback onTryOn;
+  final VoidCallback onAddToCart;
+  final VoidCallback onSaveOutfit;
 
   @override
   Widget build(BuildContext context) {
@@ -127,21 +236,19 @@ class _ProductCard extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(12.r)),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(12.r),
+                  ),
                   color: Colors.grey[100],
                 ),
                 padding: EdgeInsets.all(12.r),
-                child: Image.asset(
-                  product.assetPath,
-                  fit: BoxFit.contain,
-                ),
+                child: Image.asset(product.assetPath, fit: BoxFit.contain),
               ),
             ),
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Padding(
-                padding: EdgeInsets.all(12.w),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -177,6 +284,64 @@ class _ProductCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 28.h,
+                            child: ElevatedButton(
+                              onPressed: onAddToCart,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF2ACAEA),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6.r),
+                                  side: const BorderSide(
+                                    color: Color(0xFF2ACAEA),
+                                  ),
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                              child: Text(
+                                'Add to Cart',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: SizedBox(
+                            height: 28.h,
+                            child: ElevatedButton(
+                              onPressed: onSaveOutfit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF2ACAEA),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6.r),
+                                  side: const BorderSide(
+                                    color: Color(0xFF2ACAEA),
+                                  ),
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                              child: Text(
+                                'Saved Outfits',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

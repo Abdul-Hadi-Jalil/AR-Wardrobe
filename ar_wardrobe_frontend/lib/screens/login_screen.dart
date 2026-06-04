@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onToggleScreen;
@@ -15,6 +16,70 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String? email;
   String? password;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _loginWithEmailAndPassword() async {
+    if (_emailController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
+      setState(() {
+        _errorMessage = 'Please fill in all fields';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      email = _emailController.text.trim();
+      password = _passwordController.text.trim();
+
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email!,
+        password: password!,
+      );
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = _getErrorMessage(e.code);
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An unexpected error occurred';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return 'No account found with this email.';
+      case 'wrong-password':
+        return 'Incorrect password.';
+      case 'invalid-email':
+        return 'Please enter a valid email address.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please try again later.';
+      default:
+        return 'Login failed. Please try again.';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,6 +191,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               SizedBox(height: 24),
+
+              // Error Message
+              if (_errorMessage != null)
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(12),
+                  margin: EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(color: Colors.red[700], fontSize: 14),
+                  ),
+                ),
+
               Container(
                 width: double.infinity,
                 height: 56,
@@ -145,17 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: () {
-                    email = _emailController.text.trim();
-                    password = _passwordController.text.trim();
-
-                    if (email != null && password != null) {
-                      FirebaseAuth.instance.signInWithEmailAndPassword(
-                        email: email!,
-                        password: password!,
-                      );
-                    }
-                  },
+                  onPressed: _isLoading ? null : _loginWithEmailAndPassword,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,

@@ -59,7 +59,8 @@ class _CartScreenState extends State<CartScreen> {
             );
           }
 
-          int total = cartItems.fold(0, (sum, item) => sum + (item.quantity));
+          int totalItems = cartItems.fold(0, (sum, item) => sum + (item.quantity));
+          double totalPrice = cartItems.fold(0, (sum, item) => sum + ((item.price ?? 0.0) * item.quantity));
 
           return Column(
             children: [
@@ -116,10 +117,31 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                         ),
                         Text(
-                          '$total',
+                          '$totalItems',
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total Price:',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Text(
+                          '\$${totalPrice.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2ACAEA),
                           ),
                         ),
                       ],
@@ -205,6 +227,15 @@ class _CartItemCard extends StatelessWidget {
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    '\$${(item.price ?? 0.0).toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF2ACAEA),
+                    ),
                   ),
                   SizedBox(height: 4.h),
                   Text(

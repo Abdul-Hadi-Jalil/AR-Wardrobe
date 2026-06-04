@@ -6,6 +6,7 @@ class CartItem {
   final String brandId;
   final int quantity;
   final DateTime addedAt;
+  final double price;
 
   CartItem({
     required this.id,
@@ -15,6 +16,7 @@ class CartItem {
     required this.brandId,
     this.quantity = 1,
     required this.addedAt,
+    this.price = 0.0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,6 +27,7 @@ class CartItem {
         'brandId': brandId,
         'quantity': quantity,
         'addedAt': addedAt.toIso8601String(),
+        'price': price,
       };
 
   factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
@@ -35,6 +38,7 @@ class CartItem {
         brandId: json['brandId'] as String,
         quantity: json['quantity'] as int? ?? 1,
         addedAt: DateTime.parse(json['addedAt'] as String),
+        price: json['price'] != null ? (json['price'] as num).toDouble() : 0.0,
       );
 
   CartItem copyWith({
@@ -45,6 +49,7 @@ class CartItem {
     String? brandId,
     int? quantity,
     DateTime? addedAt,
+    double? price,
   }) =>
       CartItem(
         id: id ?? this.id,
@@ -54,5 +59,6 @@ class CartItem {
         brandId: brandId ?? this.brandId,
         quantity: quantity ?? this.quantity,
         addedAt: addedAt ?? this.addedAt,
+        price: price ?? this.price,
       );
 }

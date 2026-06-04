@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/services.dart';
 
 import 'clothing_item.dart';
@@ -92,6 +94,8 @@ class BrandCatalog {
     void addProduct(String brandId, String path) {
       final items = grouped.putIfAbsent(brandId, () => []);
       if (items.any((item) => item.assetPath == path)) return;
+      final random = Random();
+      final price = 20 + random.nextDouble() * 80; // Random price between 20 and 100
       items.add(
         ClothingItem(
           id: path,
@@ -99,6 +103,7 @@ class BrandCatalog {
           assetPath: path,
           brandId: brandId,
           category: ClothingItem.categoryFromAssetPath(path),
+          price: double.parse(price.toStringAsFixed(2)),
         ),
       );
     }

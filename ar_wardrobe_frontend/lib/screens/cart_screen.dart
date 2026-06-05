@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:uuid/uuid.dart';
 import '../models/cart_item.dart';
+import '../models/order.dart';
 import '../services/firestore_service.dart';
 
 class CartScreen extends StatefulWidget {
@@ -59,7 +61,8 @@ class _CartScreenState extends State<CartScreen> {
             );
           }
 
-          int total = cartItems.fold(0, (sum, item) => sum + (item.quantity));
+          int totalItems = cartItems.fold(0, (sum, item) => sum + (item.quantity));
+          double totalPrice = cartItems.fold(0, (sum, item) => sum + ((item.price ?? 0.0) * item.quantity));
 
           return Column(
             children: [
@@ -116,10 +119,31 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                         ),
                         Text(
-                          '$total',
+                          '$totalItems',
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total Price:',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Text(
+                          '\$${totalPrice.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2ACAEA),
                           ),
                         ),
                       ],
@@ -129,10 +153,55 @@ class _CartScreenState extends State<CartScreen> {
                       width: double.infinity,
                       height: 48.h,
                       child: ElevatedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Proceeding to checkout...')),
-                          );
+                        onPressed: () async {
+                          if (cartItems.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Your cart is empty')),
+                            );
+                            return;
+                          }
+
+                          try {
+                            // Create order from cart items
+                            final orderItems = cartItems.map((item) => OrderItem(
+                              productId: item.productId,
+                              name: item.name,
+                              assetPath: item.assetPath,
+                              brandId: item.brandId,
+                              quantity: item.quantity,
+                              price: item.price ?? 0.0,
+                            )).toList();
+
+                            final order = UserOrder(
+                              id: '${const Uuid().v4()}',
+                              items: orderItems,
+                              totalPrice: totalPrice,
+                              totalItems: totalItems,
+                              orderDate: DateTime.now(),
+                              status: 'Pending',
+                            );
+
+                            await _firestoreService.addOrder(order);
+                            await _firestoreService.clearCart();
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Order placed successfully!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error placing order: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2ACAEA),
@@ -141,7 +210,7 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                         ),
                         child: Text(
-                          'Checkout',
+                          'Order',
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
@@ -205,6 +274,15 @@ class _CartItemCard extends StatelessWidget {
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    '\$${(item.price ?? 0.0).toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF2ACAEA),
+                    ),
                   ),
                   SizedBox(height: 4.h),
                   Text(

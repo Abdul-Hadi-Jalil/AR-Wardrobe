@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/brand_catalog.dart';
 import '../models/clothing_item.dart';
 import '../models/cart_item.dart';
+import '../models/product_prices.dart';
 import '../models/saved_outfit.dart';
 import '../services/firestore_service.dart';
 import 'camera_screen.dart';
@@ -84,7 +85,7 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12.w,
                 mainAxisSpacing: 12.h,
-                childAspectRatio: 0.75,
+                childAspectRatio: 0.65,
               ),
               itemCount: brand.products.length,
               itemBuilder: (context, index) {
@@ -117,6 +118,21 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
 
     final firestoreService = FirestoreService();
     try {
+      // Check if item already exists in cart
+      final cartItems = await firestoreService.getCartItems().first;
+
+      if (cartItems.any((item) => item.productId == product.id)) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${product.name} is already in your cart'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
       final cartItem = CartItem(
         id: '${const Uuid().v4()}',
         productId: product.id,
@@ -125,6 +141,9 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
         brandId: product.brandId,
         quantity: 1,
         addedAt: DateTime.now(),
+        price: product.price != null && product.price! > 0
+            ? product.price!
+            : ProductPrices.getPrice(product.id),
       );
       await firestoreService.addToCart(cartItem);
       if (context.mounted) {
@@ -211,6 +230,14 @@ class _ProductCard extends StatelessWidget {
   final VoidCallback onAddToCart;
   final VoidCallback onSaveOutfit;
 
+  double get _displayPrice {
+    if (product.price != null && product.price! > 0) {
+      return product.price!;
+    }
+    // Get consistent price if price is 0 or null
+    return ProductPrices.getPrice(product.id);
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -232,7 +259,7 @@ class _ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              flex: 3,
+              flex: 4,
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -241,31 +268,41 @@ class _ProductCard extends StatelessWidget {
                   ),
                   color: Colors.grey[100],
                 ),
-                padding: EdgeInsets.all(12.r),
+                padding: EdgeInsets.all(8.r),
                 child: Image.asset(product.assetPath, fit: BoxFit.contain),
               ),
             ),
             Expanded(
-              flex: 3,
+              flex: 5,
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       product.name,
                       style: TextStyle(
                         color: Colors.black,
-                        fontSize: 14.sp,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
+                    SizedBox(height: 2.h),
+                    Text(
+                      '\$${_displayPrice.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        color: const Color(0xFF2ACAEA),
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
                     SizedBox(
                       width: double.infinity,
-                      height: 32.h,
+                      height: 24.h,
                       child: ElevatedButton(
                         onPressed: onTryOn,
                         style: ElevatedButton.styleFrom(
@@ -279,18 +316,18 @@ class _ProductCard extends StatelessWidget {
                         child: Text(
                           'Try On',
                           style: TextStyle(
-                            fontSize: 12.sp,
+                            fontSize: 10.sp,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(height: 8.h),
+                    SizedBox(height: 4.h),
                     Row(
                       children: [
                         Expanded(
                           child: SizedBox(
-                            height: 28.h,
+                            height: 22.h,
                             child: ElevatedButton(
                               onPressed: onAddToCart,
                               style: ElevatedButton.styleFrom(
@@ -307,17 +344,17 @@ class _ProductCard extends StatelessWidget {
                               child: Text(
                                 'Add to Cart',
                                 style: TextStyle(
-                                  fontSize: 10.sp,
+                                  fontSize: 8.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
                           ),
                         ),
-                        SizedBox(width: 8.w),
+                        SizedBox(width: 4.w),
                         Expanded(
                           child: SizedBox(
-                            height: 28.h,
+                            height: 22.h,
                             child: ElevatedButton(
                               onPressed: onSaveOutfit,
                               style: ElevatedButton.styleFrom(
@@ -334,7 +371,7 @@ class _ProductCard extends StatelessWidget {
                               child: Text(
                                 'Saved Outfits',
                                 style: TextStyle(
-                                  fontSize: 10.sp,
+                                  fontSize: 8.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),

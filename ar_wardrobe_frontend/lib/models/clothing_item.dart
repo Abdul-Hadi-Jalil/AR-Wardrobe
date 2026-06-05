@@ -7,6 +7,7 @@ class ClothingItem {
     required this.assetPath,
     required this.brandId,
     required this.category,
+    this.price,
   });
 
   final String id;
@@ -14,6 +15,7 @@ class ClothingItem {
   final String assetPath;
   final String brandId;
   final ClothingCategory category;
+  final double? price;
 
   static ClothingCategory categoryFromAssetPath(String path) {
     final lower = path.toLowerCase();

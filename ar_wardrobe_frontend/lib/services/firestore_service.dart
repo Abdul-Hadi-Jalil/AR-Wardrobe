@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/cart_item.dart';
+import '../models/order.dart';
 import '../models/saved_outfit.dart';
 
 class FirestoreService {
@@ -95,6 +96,49 @@ class FirestoreService {
         .map((snapshot) {
           return snapshot.docs
               .map((doc) => SavedOutfit.fromJson(doc.data()))
+              .toList();
+        });
+  }
+
+  // ==================== ORDERS OPERATIONS ====================
+
+  Future<void> addOrder(UserOrder order) async {
+    if (_userId == null) throw Exception('User not authenticated');
+
+    await _firestore
+        .collection('users')
+        .doc(_userId)
+        .collection('orders')
+        .doc(order.id)
+        .set(order.toJson());
+  }
+
+  Future<void> clearCart() async {
+    if (_userId == null) throw Exception('User not authenticated');
+
+    final cartSnapshot = await _firestore
+        .collection('users')
+        .doc(_userId)
+        .collection('cart')
+        .get();
+
+    for (final doc in cartSnapshot.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  Stream<List<UserOrder>> getOrders() {
+    if (_userId == null) return Stream.value([]);
+
+    return _firestore
+        .collection('users')
+        .doc(_userId)
+        .collection('orders')
+        .orderBy('orderDate', descending: true)
+        .snapshots()
+        .map<List<UserOrder>>((snapshot) {
+          return snapshot.docs
+              .map((doc) => UserOrder.fromJson(doc.data()))
               .toList();
         });
   }

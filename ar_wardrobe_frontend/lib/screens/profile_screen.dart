@@ -1,11 +1,38 @@
 import 'package:ar_wardrobe_frontend/screens/edit_profile_screen.dart';
-import 'package:ar_wardrobe_frontend/screens/cart_screen.dart';
-import 'package:ar_wardrobe_frontend/screens/saved_outfits_screen.dart';
+import 'package:ar_wardrobe_frontend/screens/orders_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/firestore_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final FirestoreService _firestoreService = FirestoreService();
+  int _savedItemsCount = 0;
+  int _ordersCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCounts();
+  }
+
+  Future<void> _loadCounts() async {
+    final savedOutfits = await _firestoreService.getSavedOutfits().first;
+    final orders = await _firestoreService.getOrders().first;
+    
+    if (mounted) {
+      setState(() {
+        _savedItemsCount = savedOutfits.length;
+        _ordersCount = orders.length;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,9 +124,8 @@ class ProfileScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatItem('Saved Items', '12'),
-                      _buildStatItem('Tried Items', '34'),
-                      _buildStatItem('Orders', '5'),
+                      _buildStatItem('Saved Items', '$_savedItemsCount'),
+                      _buildStatItem('Orders', '$_ordersCount'),
                     ],
                   ),
                 ),
@@ -110,28 +136,21 @@ class ProfileScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       _buildMenuItem(
-                        icon: Icons.shopping_cart,
-                        iconColor: Colors.blue,
-                        title: 'Cart',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CartScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      SizedBox(height: 16),
-                      _buildMenuItem(
                         icon: Icons.favorite,
                         iconColor: Colors.red,
                         title: 'Saved Outfits',
+                        onTap: () {},
+                      ),
+                      SizedBox(height: 16),
+                      _buildMenuItem(
+                        icon: Icons.shopping_bag,
+                        iconColor: const Color(0xFF2ACAEA),
+                        title: 'My Orders',
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const SavedOutfitsScreen(),
+                              builder: (context) => const OrdersScreen(),
                             ),
                           );
                         },

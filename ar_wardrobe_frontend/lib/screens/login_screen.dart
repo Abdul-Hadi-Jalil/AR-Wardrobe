@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String? email;
   String? password;
   bool _isLoading = false;
+  bool _obscurePassword = true;
   String? _errorMessage;
 
   Future<void> _loginWithEmailAndPassword() async {
@@ -87,25 +89,28 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: const Color(0xFFF5F5F5), // Light grey background
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24),
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 40),
+              SizedBox(height: 40.h),
               Text(
                 'Login / Sign Up',
                 style: TextStyle(
                   color: Colors.grey[600],
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SizedBox(height: 40),
+              SizedBox(height: 40.h),
               Center(
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
-                    children: const [
+                    style: TextStyle(
+                      fontSize: 36.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    children: [
                       TextSpan(
                         text: 'AR ',
                         style: TextStyle(
@@ -120,18 +125,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: 8),
-              const Center(
+              SizedBox(height: 8.h),
+              Center(
                 child: Text(
                   'Try Before You Buy',
                   style: TextStyle(
                     color: Colors.black,
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
-              SizedBox(height: 60),
+              SizedBox(height: 60.h),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -148,19 +153,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _emailController,
                   decoration: InputDecoration(
                     hintText: 'Email Address',
-                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
+                    hintStyle: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 16.sp,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
+                      horizontal: 16.w,
+                      vertical: 16.h,
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 16.h),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -175,29 +183,42 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: TextField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     hintText: 'Password',
-                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
+                    hintStyle: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 16.sp,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
+                      horizontal: 16.w,
+                      vertical: 16.h,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.grey[500],
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 24),
+              SizedBox(height: 24.h),
 
               // Error Message
               if (_errorMessage != null)
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.all(12),
-                  margin: EdgeInsets.only(bottom: 16),
+                  padding: EdgeInsets.all(12.w),
+                  margin: EdgeInsets.only(bottom: 16.h),
                   decoration: BoxDecoration(
                     color: Colors.red[50],
                     borderRadius: BorderRadius.circular(8),
@@ -205,13 +226,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Text(
                     _errorMessage!,
-                    style: TextStyle(color: Colors.red[700], fontSize: 14),
+                    style: TextStyle(color: Colors.red[700], fontSize: 14.sp),
                   ),
                 ),
 
               Container(
                 width: double.infinity,
-                height: 56,
+                height: 56.h,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF2ACAEA), Color(0xFF1EBCBD)],
@@ -240,32 +261,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Login',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 32),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(height: 1, color: Colors.grey[300]),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'OR',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 14),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(height: 1, color: Colors.grey[300]),
-                  ),
-                ],
-              ),
+              SizedBox(height: 32.h),
 
-              const Spacer(),
+              Spacer(),
               Center(
                 child: GestureDetector(
                   onTap: () {
@@ -273,8 +277,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: RichText(
                     text: TextSpan(
-                      style: TextStyle(fontSize: 16, color: Colors.black87),
-                      children: const [
+                      style: TextStyle(fontSize: 16.sp, color: Colors.black87),
+                      children: [
                         TextSpan(text: "Don't have an account? "),
                         TextSpan(
                           text: 'Sign Up',
@@ -288,7 +292,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 20.h),
             ],
           ),
         ),

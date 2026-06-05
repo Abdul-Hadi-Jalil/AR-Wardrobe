@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:uuid/uuid.dart';
@@ -8,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/brand_catalog.dart';
 import '../models/clothing_item.dart';
 import '../models/cart_item.dart';
+import '../models/product_prices.dart';
 import '../models/saved_outfit.dart';
 import '../services/firestore_service.dart';
 import 'camera_screen.dart';
@@ -119,6 +118,21 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
 
     final firestoreService = FirestoreService();
     try {
+      // Check if item already exists in cart
+      final cartItems = await firestoreService.getCartItems().first;
+
+      if (cartItems.any((item) => item.productId == product.id)) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${product.name} is already in your cart'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
       final cartItem = CartItem(
         id: '${const Uuid().v4()}',
         productId: product.id,
@@ -129,7 +143,7 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
         addedAt: DateTime.now(),
         price: product.price != null && product.price! > 0
             ? product.price!
-            : (20 + Random().nextDouble() * 80),
+            : ProductPrices.getPrice(product.id),
       );
       await firestoreService.addToCart(cartItem);
       if (context.mounted) {
@@ -220,9 +234,8 @@ class _ProductCard extends StatelessWidget {
     if (product.price != null && product.price! > 0) {
       return product.price!;
     }
-    // Generate random price if price is 0 or null
-    final random = Random();
-    return 20 + random.nextDouble() * 80;
+    // Get consistent price if price is 0 or null
+    return ProductPrices.getPrice(product.id);
   }
 
   @override

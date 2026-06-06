@@ -27,10 +27,18 @@ class BrandCatalog {
   /// asset manifest omits nested or webp files. Add entries when new brands
   /// are added under assets/brand_clothes/.
   static const _knownBrandAssets = <String, List<String>>{
+    'alkaram': ['assets/brand_clothes/alkaram/shirt.png'],
+    'bonanza': ['assets/brand_clothes/bonanza/off_white_shirt.png'],
+    'chinyere': ['assets/brand_clothes/chinyere/light_peach_shirt.png'],
+    'ideas': ['assets/brand_clothes/ideas/grey_hat.png'],
+    'levis': ['assets/brand_clothes/levis/beig_pant.png'],
     'lime_light': [
       'assets/brand_clothes/lime_light/shirt_j.jpg',
       'assets/brand_clothes/lime_light/neon_limelight.jpg',
+      'assets/brand_clothes/lime_light/blue_pant.png',
+      'assets/brand_clothes/lime_light/white_pant.png',
     ],
+    'nike': ['assets/brand_clothes/nike/grey_pant.png'],
     'outfitters': [
       'assets/brand_clothes/outfitters/peach_shirt.webp',
       'assets/brand_clothes/outfitters/shield_sunglasses.webp',
@@ -50,7 +58,7 @@ class BrandCatalog {
 
   static Future<List<BrandInfo>> loadBrands() async {
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
-    final productsByBrand = _groupProductsByBrand(manifest);
+    final productsByBrand = await _groupProductsByBrand(manifest);
 
     final logoAssets = manifest
         .listAssets()
@@ -79,9 +87,9 @@ class BrandCatalog {
     return null;
   }
 
-  static Map<String, List<ClothingItem>> _groupProductsByBrand(
+  static Future<Map<String, List<ClothingItem>>> _groupProductsByBrand(
     AssetManifest manifest,
-  ) {
+  ) async {
     final manifestPaths = manifest
         .listAssets()
         .where((path) => path.startsWith(_clothesRoot))
@@ -112,13 +120,29 @@ class BrandCatalog {
       addProduct(brandId, path);
     }
 
+    // Fallback assets are only added when the file is actually bundled.
+    // This prevents phantom products that would render an "asset not found"
+    // error when the underlying image has been removed from the folder.
     for (final entry in _knownBrandAssets.entries) {
       for (final path in entry.value) {
-        addProduct(entry.key, path);
+        if (manifestPaths.contains(path)) continue;
+        if (await _assetExists(path)) {
+          addProduct(entry.key, path);
+        }
       }
     }
 
     return grouped;
+  }
+
+  /// Returns true when [path] can be loaded from the asset bundle.
+  static Future<bool> _assetExists(String path) async {
+    try {
+      await rootBundle.load(path);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   static String? _brandIdFromClothesPath(String path) {

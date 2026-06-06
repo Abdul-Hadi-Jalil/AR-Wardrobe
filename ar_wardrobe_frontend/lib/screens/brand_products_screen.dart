@@ -9,6 +9,8 @@ import '../models/cart_item.dart';
 import '../models/product_prices.dart';
 import '../models/saved_outfit.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_theme.dart';
+import '../theme/app_widgets.dart';
 import 'camera_screen.dart';
 
 class BrandProductsScreen extends StatefulWidget {
@@ -32,60 +34,45 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         title: FutureBuilder<BrandInfo?>(
           future: _brandFuture,
           builder: (context, snapshot) {
-            final name =
-                snapshot.data?.displayName ??
+            final name = snapshot.data?.displayName ??
                 BrandCatalog.displayNameFor(widget.brandId);
-            return Text(
-              name,
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 24.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            );
+            return Text(name);
           },
         ),
-        centerTitle: true,
       ),
       body: FutureBuilder<BrandInfo?>(
         future: _brandFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF2ACAEA)),
+              child: CircularProgressIndicator(color: AppColors.primary),
             );
           }
 
           final brand = snapshot.data;
           if (brand == null || brand.products.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: EdgeInsets.all(24.w),
-                child: Text(
-                  'No clothes found for this brand.\nAdd images to assets/brand_clothes/${widget.brandId}/',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 16.sp),
-                ),
-              ),
+            return EmptyState(
+              icon: Icons.checkroom_outlined,
+              title: 'No clothes found',
+              subtitle:
+                  'Add images to assets/brand_clothes/${widget.brandId}/',
             );
           }
 
           return Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: GridView.builder(
-              padding: EdgeInsets.only(top: 16.h, bottom: 100.h),
+              padding: EdgeInsets.only(top: 12.h, bottom: 110.h),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                crossAxisSpacing: 12.w,
-                mainAxisSpacing: 12.h,
-                childAspectRatio: 0.65,
+                crossAxisSpacing: 14.w,
+                mainAxisSpacing: 14.h,
+                childAspectRatio: 0.58,
               ),
               itemCount: brand.products.length,
               itemBuilder: (context, index) {
@@ -108,9 +95,9 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Please login to add items to cart'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.danger,
         ),
       );
       return;
@@ -118,7 +105,6 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
 
     final firestoreService = FirestoreService();
     try {
-      // Check if item already exists in cart
       final cartItems = await firestoreService.getCartItems().first;
 
       if (cartItems.any((item) => item.productId == product.id)) {
@@ -126,7 +112,7 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${product.name} is already in your cart'),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppColors.warning,
             ),
           );
         }
@@ -134,7 +120,7 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
       }
 
       final cartItem = CartItem(
-        id: '${const Uuid().v4()}',
+        id: const Uuid().v4(),
         productId: product.id,
         name: product.name,
         assetPath: product.assetPath,
@@ -150,7 +136,7 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${product.name} added to cart'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -159,7 +145,7 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error adding to cart: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.danger,
           ),
         );
       }
@@ -167,15 +153,12 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
   }
 
   void _saveOutfit(BuildContext context, ClothingItem product) async {
-    print('DEBUG: Save outfit button pressed for product: ${product.name}');
     final user = FirebaseAuth.instance.currentUser;
-    print('DEBUG: Current user: ${user?.email ?? "null"}');
     if (user == null) {
-      print('DEBUG: User not authenticated, showing login prompt');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Please login to save outfits'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.danger,
         ),
       );
       return;
@@ -183,33 +166,28 @@ class _BrandProductsScreenState extends State<BrandProductsScreen> {
 
     final firestoreService = FirestoreService();
     try {
-      print('DEBUG: Creating outfit object');
       final outfit = SavedOutfit(
-        id: '${const Uuid().v4()}',
+        id: const Uuid().v4(),
         outfitName: product.name,
         productIds: [product.id],
         productAssets: [product.assetPath],
         savedAt: DateTime.now(),
       );
-      print('DEBUG: Attempting to save outfit to Firestore');
       await firestoreService.addToSavedOutfits(outfit);
-      print('DEBUG: Outfit saved successfully');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${product.name} saved as outfit'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       }
     } catch (e) {
-      print('DEBUG: Error saving outfit: $e');
-      print('DEBUG: Error type: ${e.runtimeType}');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving outfit: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.danger,
           ),
         );
       }
@@ -234,158 +212,149 @@ class _ProductCard extends StatelessWidget {
     if (product.price != null && product.price! > 0) {
       return product.price!;
     }
-    // Get consistent price if price is 0 or null
     return ProductPrices.getPrice(product.id);
   }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTryOn,
-      borderRadius: BorderRadius.circular(12.r),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 5,
+            child: Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceAlt,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(AppRadius.lg),
+                    ),
+                  ),
+                  padding: EdgeInsets.all(10.r),
+                  child: SafeAssetImage(assetPath: product.assetPath),
+                ),
+                Positioned(
+                  top: 8.h,
+                  right: 8.w,
+                  child: _CircleIconButton(
+                    icon: Icons.bookmark_border_rounded,
+                    onTap: onSaveOutfit,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 4,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(12.w, 10.h, 12.w, 12.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    '\$${_displayPrice.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: onTryOn,
+                          child: Container(
+                            height: 36.h,
+                            decoration: BoxDecoration(
+                              gradient: AppGradients.brandHorizontal,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.sm),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.camera_alt_rounded,
+                                    color: Colors.white, size: 15.sp),
+                                SizedBox(width: 5.w),
+                                Text(
+                                  'Try On',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      GestureDetector(
+                        onTap: onAddToCart,
+                        child: Container(
+                          width: 36.h,
+                          height: 36.h,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceAlt,
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                          child: Icon(Icons.add_shopping_cart_rounded,
+                              color: AppColors.primary, size: 17.sp),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  const _CircleIconButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
+        width: 32.w,
+        height: 32.w,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          shape: BoxShape.circle,
+          boxShadow: AppShadows.soft,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 4,
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(12.r),
-                  ),
-                  color: Colors.grey[100],
-                ),
-                padding: EdgeInsets.all(8.r),
-                child: Image.asset(product.assetPath, fit: BoxFit.contain),
-              ),
-            ),
-            Expanded(
-              flex: 5,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      product.name,
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      '\$${_displayPrice.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        color: const Color(0xFF2ACAEA),
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 24.h,
-                      child: ElevatedButton(
-                        onPressed: onTryOn,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2ACAEA),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6.r),
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Text(
-                          'Try On',
-                          style: TextStyle(
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 22.h,
-                            child: ElevatedButton(
-                              onPressed: onAddToCart,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF2ACAEA),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6.r),
-                                  side: const BorderSide(
-                                    color: Color(0xFF2ACAEA),
-                                  ),
-                                ),
-                                padding: EdgeInsets.zero,
-                              ),
-                              child: Text(
-                                'Add to Cart',
-                                style: TextStyle(
-                                  fontSize: 8.sp,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 4.w),
-                        Expanded(
-                          child: SizedBox(
-                            height: 22.h,
-                            child: ElevatedButton(
-                              onPressed: onSaveOutfit,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF2ACAEA),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6.r),
-                                  side: const BorderSide(
-                                    color: Color(0xFF2ACAEA),
-                                  ),
-                                ),
-                                padding: EdgeInsets.zero,
-                              ),
-                              child: Text(
-                                'Saved Outfits',
-                                style: TextStyle(
-                                  fontSize: 8.sp,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: Icon(icon, size: 18.sp, color: AppColors.primary),
       ),
     );
   }

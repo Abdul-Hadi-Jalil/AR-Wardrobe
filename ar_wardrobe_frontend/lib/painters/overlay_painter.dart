@@ -1,10 +1,10 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../models/clothing_item.dart';
 import '../state/tryon_state.dart';
+import '../utils/body_overlay_layout.dart';
 import '../utils/preview_coordinates.dart';
 
 class OverlayPainter extends CustomPainter {
@@ -20,12 +20,7 @@ class OverlayPainter extends CustomPainter {
   final Size screenSize;
   final bool isFrontCamera;
 
-  static Future<ui.Image> loadClothingImage(String assetPath) async {
-    final data = await rootBundle.load(assetPath);
-    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
-    final frame = await codec.getNextFrame();
-    return frame.image;
-  }
+  double get _imageAspect => image.width / image.height;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -36,6 +31,8 @@ class OverlayPainter extends CustomPainter {
         _paintHat(canvas);
       case ClothingCategory.shirts:
         _paintShirt(canvas);
+      case ClothingCategory.pants:
+        _paintPants(canvas);
     }
   }
 
@@ -47,8 +44,20 @@ class OverlayPainter extends CustomPainter {
     final leftEye = coords.toScreen(face.leftEye.dx, face.leftEye.dy);
     final rightEye = coords.toScreen(face.rightEye.dx, face.rightEye.dy);
 
-    const padding = 14.0;
-    final rect = _rectFromPoints(leftEye, rightEye, padX: padding, padY: padding);
+    final eyeCenter = Offset(
+      (leftEye.dx + rightEye.dx) / 2,
+      (leftEye.dy + rightEye.dy) / 2,
+    );
+    final eyeDistance = (rightEye - leftEye).distance;
+    final width = eyeDistance * 2.5;
+    final height = width / _imageAspect;
+
+    final rect = Rect.fromCenter(
+      center: eyeCenter,
+      width: width,
+      height: height,
+    );
+
     _paintRotated(canvas, rect, face.headEulerAngleZ);
   }
 
@@ -66,17 +75,22 @@ class OverlayPainter extends CustomPainter {
       face.boundingBox.bottom,
     );
     final faceRect = Rect.fromPoints(topLeft, bottomRight);
-    final width = faceRect.width * 1.2;
-    final height = width * (image.height / image.width);
+    final faceHeight = faceRect.height;
+    final width = faceRect.width * 1.15;
+    final height = width / _imageAspect;
 
-    _paintImage(
+    // Brim sits on forehead and overlaps the top of the face box to cover hair.
+    final hatBottom = faceRect.top + faceHeight * 0.28;
+
+    _paintContained(
       canvas,
       Rect.fromLTWH(
         faceRect.center.dx - width / 2,
-        faceRect.top - height,
+        hatBottom - height,
         width,
         height,
       ),
+      alignment: Alignment.bottomCenter,
     );
   }
 
@@ -85,36 +99,21 @@ class OverlayPainter extends CustomPainter {
     if (pose == null) return;
 
     final coords = _coordsFor(pose.imageWidth, pose.imageHeight);
-    final leftShoulder = coords.toScreen(
-      pose.leftShoulder.dx,
-      pose.leftShoulder.dy,
-    );
-    final rightShoulder = coords.toScreen(
-      pose.rightShoulder.dx,
-      pose.rightShoulder.dy,
-    );
-    final leftHip = coords.toScreen(pose.leftHip.dx, pose.leftHip.dy);
-    final rightHip = coords.toScreen(pose.rightHip.dx, pose.rightHip.dy);
+    final rect = BodyOverlayLayout.shirtRect(pose: pose, coords: coords);
+    if (rect == null) return;
 
-    final shoulderY = (leftShoulder.dy + rightShoulder.dy) / 2;
-    final hipY = (leftHip.dy + rightHip.dy) / 2;
-    final width = (rightShoulder.dx - leftShoulder.dx).abs() * 1.35;
-    final height = (hipY - shoulderY).abs() * 1.15;
-    if (width < 20 || height < 20) return;
+    _paintContained(canvas, rect, alignment: Alignment.topCenter);
+  }
 
-    final left = leftShoulder.dx < rightShoulder.dx
-        ? leftShoulder.dx
-        : rightShoulder.dx;
+  void _paintPants(Canvas canvas) {
+    final pose = tryOnState.currentPose;
+    if (pose == null) return;
 
-    _paintImage(
-      canvas,
-      Rect.fromLTWH(
-        left - width * 0.15,
-        shoulderY - height * 0.05,
-        width,
-        height,
-      ),
-    );
+    final coords = _coordsFor(pose.imageWidth, pose.imageHeight);
+    final rect = BodyOverlayLayout.pantsRect(pose: pose, coords: coords);
+    if (rect == null) return;
+
+    _paintContained(canvas, rect, alignment: Alignment.topCenter);
   }
 
   PreviewCoordinates _coordsFor(double imageW, double imageH) {
@@ -122,24 +121,6 @@ class OverlayPainter extends CustomPainter {
       screenSize: screenSize,
       imageSize: Size(imageW, imageH),
       isFrontCamera: isFrontCamera,
-    );
-  }
-
-  Rect _rectFromPoints(
-    Offset a,
-    Offset b, {
-    double padX = 0,
-    double padY = 0,
-  }) {
-    final left = a.dx < b.dx ? a.dx : b.dx;
-    final top = a.dy < b.dy ? a.dy : b.dy;
-    final right = a.dx > b.dx ? a.dx : b.dx;
-    final bottom = a.dy > b.dy ? a.dy : b.dy;
-    return Rect.fromLTRB(
-      left - padX,
-      top - padY,
-      right + padX,
-      bottom + padY,
     );
   }
 
@@ -151,17 +132,23 @@ class OverlayPainter extends CustomPainter {
     canvas.translate(center.dx, center.dy);
     canvas.rotate(angleDegrees * (3.1415926535 / 180));
     canvas.translate(-center.dx, -center.dy);
-    _paintImage(canvas, rect);
+    _paintContained(canvas, rect);
     canvas.restore();
   }
 
-  void _paintImage(Canvas canvas, Rect rect) {
+  void _paintContained(
+    Canvas canvas,
+    Rect rect, {
+    Alignment alignment = Alignment.center,
+  }) {
     if (rect.width <= 0 || rect.height <= 0) return;
+
     paintImage(
       canvas: canvas,
       rect: rect,
       image: image,
-      fit: BoxFit.fill,
+      fit: BoxFit.contain,
+      alignment: alignment,
       filterQuality: FilterQuality.medium,
     );
   }

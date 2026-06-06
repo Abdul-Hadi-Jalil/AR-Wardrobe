@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../models/brand_catalog.dart';
+import '../theme/app_theme.dart';
+import '../theme/app_widgets.dart';
 import 'brand_products_screen.dart';
 
 class BrandsScreen extends StatefulWidget {
@@ -32,111 +34,110 @@ class _BrandsScreenState extends State<BrandsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'Brands',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
-        child: Column(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: Colors.grey[300]!),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 12.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Discover',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        'Top Brands',
+                        style: TextStyle(
+                          fontSize: 26.sp,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    width: 46.w,
+                    height: 46.w,
+                    decoration: BoxDecoration(
+                      gradient: AppGradients.brand,
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                    child: Icon(Icons.checkroom_rounded,
+                        color: Colors.white, size: 24.sp),
+                  ),
+                ],
               ),
-              child: TextField(
+              SizedBox(height: 20.h),
+              AppSearchField(
+                hintText: 'Search brands...',
                 onChanged: (value) => setState(() => _searchQuery = value),
-                decoration: InputDecoration(
-                  hintText: 'Search brands...',
-                  hintStyle: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 16.sp,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: Colors.grey[400],
-                    size: 24.w,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 16.h,
-                  ),
+              ),
+              SizedBox(height: 20.h),
+              Expanded(
+                child: FutureBuilder<List<BrandInfo>>(
+                  future: _brandsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      return const EmptyState(
+                        icon: Icons.cloud_off_rounded,
+                        title: 'Could not load brands',
+                        subtitle: 'Please check your connection and try again.',
+                      );
+                    }
+
+                    final brands = _filterBrands(snapshot.data ?? []);
+                    if (brands.isEmpty) {
+                      return EmptyState(
+                        icon: Icons.search_off_rounded,
+                        title: _searchQuery.isEmpty
+                            ? 'No brands yet'
+                            : 'No matches found',
+                        subtitle: _searchQuery.isEmpty
+                            ? 'Add logos to assets/brand_logos/'
+                            : 'Try a different search term.',
+                      );
+                    }
+
+                    return GridView.builder(
+                      padding: EdgeInsets.only(top: 4.h, bottom: 110.h),
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 14.w,
+                        mainAxisSpacing: 14.h,
+                        childAspectRatio: 0.92,
+                      ),
+                      itemCount: brands.length,
+                      itemBuilder: (context, index) {
+                        return _BrandLogoCard(brand: brands[index]);
+                      },
+                    );
+                  },
                 ),
               ),
-            ),
-            SizedBox(height: 24.h),
-            Expanded(
-              child: FutureBuilder<List<BrandInfo>>(
-                future: _brandsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF2ACAEA),
-                      ),
-                    );
-                  }
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Text(
-                        'Could not load brands',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16.sp,
-                        ),
-                      ),
-                    );
-                  }
-
-                  final brands = _filterBrands(snapshot.data ?? []);
-                  if (brands.isEmpty) {
-                    return Center(
-                      child: Text(
-                        _searchQuery.isEmpty
-                            ? 'Add logos to assets/brand_logos/'
-                            : 'No brands match your search',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                    );
-                  }
-
-                  return GridView.builder(
-                    padding: EdgeInsets.only(bottom: 24.h),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12.w,
-                      mainAxisSpacing: 12.h,
-                      childAspectRatio: 0.95,
-                    ),
-                    itemCount: brands.length,
-                    itemBuilder: (context, index) {
-                      return _BrandLogoCard(brand: brands[index]);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -150,65 +151,45 @@ class _BrandLogoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12.r),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BrandProductsScreen(brandId: brand.id),
+    return SoftCard(
+      radius: AppRadius.lg,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BrandProductsScreen(brandId: brand.id),
+          ),
+        );
+      },
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              margin: EdgeInsets.all(12.r),
+              padding: EdgeInsets.all(14.r),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: SafeAssetImage(assetPath: brand.logoAsset),
             ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12.r),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
-          child: Column(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.all(16.r),
-                  child: Image.asset(
-                    brand.logoAsset,
-                    fit: BoxFit.contain,
-                  ),
-                ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(12.w, 0, 12.w, 14.h),
+            child: Text(
+              brand.displayName,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w700,
               ),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 10.h),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(12.r),
-                  ),
-                ),
-                child: Text(
-                  brand.displayName,
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

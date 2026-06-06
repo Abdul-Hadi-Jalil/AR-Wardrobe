@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/saved_outfit.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_theme.dart';
+import '../theme/app_widgets.dart';
 
 class SavedOutfitsScreen extends StatefulWidget {
   const SavedOutfitsScreen({super.key});
@@ -16,51 +18,35 @@ class _SavedOutfitsScreenState extends State<SavedOutfitsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'Saved Outfits',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('Saved Outfits')),
       body: StreamBuilder<List<SavedOutfit>>(
         stream: _firestoreService.getSavedOutfits(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF2ACAEA)),
+              child: CircularProgressIndicator(color: AppColors.primary),
             );
           }
 
           if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Error loading saved outfits',
-                style: TextStyle(color: Colors.grey[600], fontSize: 16.sp),
-              ),
+            return const EmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Error loading saved outfits',
             );
           }
 
           final outfits = snapshot.data ?? [];
           if (outfits.isEmpty) {
-            return Center(
-              child: Text(
-                'No saved outfits yet\nSave your favorite outfit combinations',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600], fontSize: 16.sp),
-              ),
+            return const EmptyState(
+              icon: Icons.favorite_border_rounded,
+              title: 'No saved outfits yet',
+              subtitle: 'Save your favorite outfit combinations.',
             );
           }
 
           return ListView.builder(
-            padding: EdgeInsets.all(16.w),
+            padding: EdgeInsets.all(20.w),
             itemCount: outfits.length,
             itemBuilder: (context, index) {
               final outfit = outfits[index];
@@ -68,9 +54,11 @@ class _SavedOutfitsScreenState extends State<SavedOutfitsScreen> {
                 outfit: outfit,
                 onDelete: () async {
                   await _firestoreService.removeFromSavedOutfits(outfit.id);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Outfit removed')),
-                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Outfit removed')),
+                    );
+                  }
                 },
               );
             },
@@ -85,71 +73,84 @@ class _OutfitCard extends StatelessWidget {
   final SavedOutfit outfit;
   final VoidCallback onDelete;
 
-  const _OutfitCard({
-    required this.outfit,
-    required this.onDelete,
-  });
+  const _OutfitCard({required this.outfit, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: EdgeInsets.only(bottom: 16.h),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    outfit.outfitName,
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: onDelete,
-                ),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Text(
-              'Saved on ${outfit.savedAt.toString().split('.')[0]}',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12.sp),
-            ),
-            SizedBox(height: 12.h),
-            SizedBox(
-              height: 100.h,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: outfit.productAssets.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: EdgeInsets.only(right: 8.w),
-                    child: Container(
-                      width: 80.w,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8.r),
-                        color: Colors.grey[100],
-                      ),
-                      child: Image.asset(
-                        outfit.productAssets[index],
-                        fit: BoxFit.cover,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      outfit.outfitName,
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                  );
-                },
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Saved on ${outfit.savedAt.toString().split('.')[0]}',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12.sp,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              GestureDetector(
+                onTap: onDelete,
+                child: Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Icon(Icons.delete_outline_rounded,
+                      color: AppColors.danger, size: 20.sp),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          SizedBox(
+            height: 96.h,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: outfit.productAssets.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  width: 82.w,
+                  margin: EdgeInsets.only(right: 10.w),
+                  padding: EdgeInsets.all(6.w),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    color: AppColors.surfaceAlt,
+                  ),
+                  child: SafeAssetImage(
+                    assetPath: outfit.productAssets[index],
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

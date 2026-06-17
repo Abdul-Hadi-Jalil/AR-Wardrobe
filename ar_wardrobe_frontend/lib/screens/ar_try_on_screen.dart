@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_widgets.dart';
+import 'ai_try_on_screen.dart';
 
 class ARTryOnScreen extends StatelessWidget {
   const ARTryOnScreen({super.key});
@@ -58,7 +60,7 @@ class ARTryOnScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 8.h),
                     Text(
-                      'Use your camera to see how outfits look on you in real time, powered by live body & face tracking.',
+                      'See any outfit on you instantly — upload a photo and let AI dress you, or use the live AR camera.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.9),
@@ -68,6 +70,19 @@ class ARTryOnScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              SizedBox(height: 16.h),
+              GradientButton(
+                label: 'Start AI Virtual Try-On',
+                icon: Icons.auto_awesome_rounded,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AiTryOnScreen(),
+                    ),
+                  );
+                },
               ),
               SizedBox(height: 28.h),
               Text(

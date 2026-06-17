@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import '../theme/app_theme.dart';
+import '../theme/app_widgets.dart';
 import 'main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -84,207 +87,78 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // Light grey background
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 40.h),
-              Text(
-                'Login / Sign Up',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w500,
-                ),
+              SizedBox(height: 36.h),
+              const AuthHeader(
+                badge: 'Welcome back',
+                subtitle: 'Try Before You Buy',
               ),
               SizedBox(height: 40.h),
-              Center(
-                child: RichText(
-                  text: TextSpan(
-                    style: TextStyle(
-                      fontSize: 36.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: 'AR ',
-                        style: TextStyle(
-                          color: Color(0xFF2ACAEA), // Turquoise/cyan
-                        ),
-                      ),
-                      TextSpan(
-                        text: '| Wardrobe',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Center(
-                child: Text(
-                  'Try Before You Buy',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-              SizedBox(height: 60.h),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    hintText: 'Email Address',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 16.sp,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 16.h,
-                    ),
-                  ),
-                ),
+              AuthField(
+                controller: _emailController,
+                hint: 'Email Address',
+                icon: Icons.mail_outline_rounded,
+                keyboardType: TextInputType.emailAddress,
               ),
               SizedBox(height: 16.h),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    hintText: 'Password',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 16.sp,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 16.h,
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: Colors.grey[500],
-                      ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
-                    ),
+              AuthField(
+                controller: _passwordController,
+                hint: 'Password',
+                icon: Icons.lock_outline_rounded,
+                obscure: _obscurePassword,
+                trailing: IconButton(
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.textMuted,
                   ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
               SizedBox(height: 24.h),
-
-              // Error Message
-              if (_errorMessage != null)
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(12.w),
-                  margin: EdgeInsets.only(bottom: 16.h),
-                  decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red[200]!),
-                  ),
-                  child: Text(
-                    _errorMessage!,
-                    style: TextStyle(color: Colors.red[700], fontSize: 14.sp),
-                  ),
-                ),
-
-              Container(
-                width: double.infinity,
-                height: 56.h,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2ACAEA), Color(0xFF1EBCBD)],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2ACAEA).withOpacity(0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _loginWithEmailAndPassword,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Login',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+              if (_errorMessage != null) ...[
+                ErrorBanner(message: _errorMessage!),
+                SizedBox(height: 16.h),
+              ],
+              GradientButton(
+                label: 'Login',
+                isLoading: _isLoading,
+                onPressed: _loginWithEmailAndPassword,
               ),
-              SizedBox(height: 32.h),
-
-              Spacer(),
+              SizedBox(height: 28.h),
               Center(
                 child: GestureDetector(
-                  onTap: () {
-                    widget.onToggleScreen!();
-                  },
+                  onTap: () => widget.onToggleScreen?.call(),
                   child: RichText(
                     text: TextSpan(
-                      style: TextStyle(fontSize: 16.sp, color: Colors.black87),
-                      children: [
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                      children: const [
                         TextSpan(text: "Don't have an account? "),
                         TextSpan(
                           text: 'Sign Up',
                           style: TextStyle(
-                            color: Color(0xFF2ACAEA),
-                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -292,8 +166,98 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: 20.h),
+              SizedBox(height: 24.h),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shared auth header with brand logo, wordmark and subtitle, used by both
+/// the login and register screens.
+class AuthHeader extends StatelessWidget {
+  const AuthHeader({super.key, required this.badge, required this.subtitle});
+
+  final String badge;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 72.w,
+          height: 72.w,
+          decoration: BoxDecoration(
+            gradient: AppGradients.brand,
+            borderRadius: BorderRadius.circular(22.r),
+            boxShadow: AppShadows.brandGlow(AppColors.primary),
+          ),
+          child: Icon(Icons.checkroom_rounded,
+              color: Colors.white, size: 36.sp),
+        ),
+        SizedBox(height: 24.h),
+        const BrandWordmark(fontSize: 30),
+        SizedBox(height: 8.h),
+        Text(
+          subtitle,
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Styled text field used in the auth flow.
+class AuthField extends StatelessWidget {
+  const AuthField({
+    super.key,
+    required this.controller,
+    required this.hint,
+    required this.icon,
+    this.obscure = false,
+    this.keyboardType,
+    this.trailing,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final bool obscure;
+  final TextInputType? keyboardType;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        boxShadow: AppShadows.soft,
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscure,
+        keyboardType: keyboardType,
+        style: TextStyle(fontSize: 15.sp, color: AppColors.textPrimary),
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: Icon(icon, color: AppColors.textMuted, size: 22.sp),
+          suffixIcon: trailing,
+          filled: true,
+          fillColor: AppColors.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            borderSide: BorderSide.none,
           ),
         ),
       ),

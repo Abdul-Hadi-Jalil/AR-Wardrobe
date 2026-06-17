@@ -1,4 +1,4 @@
-enum ClothingCategory { glasses, hats, shirts }
+enum ClothingCategory { glasses, hats, shirts, pants }
 
 class ClothingItem {
   const ClothingItem({
@@ -32,11 +32,18 @@ class ClothingItem {
         lower.contains('headwear')) {
       return ClothingCategory.hats;
     }
+    if (lower.contains('pant') ||
+        lower.contains('trouser') ||
+        lower.contains('jean') ||
+        lower.contains('chino')) {
+      return ClothingCategory.pants;
+    }
     return ClothingCategory.shirts;
   }
 
   bool get usesFace =>
       category == ClothingCategory.glasses || category == ClothingCategory.hats;
 
-  bool get usesPose => category == ClothingCategory.shirts;
+  bool get usesPose =>
+      category == ClothingCategory.shirts || category == ClothingCategory.pants;
 }

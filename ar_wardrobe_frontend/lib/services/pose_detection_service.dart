@@ -58,11 +58,32 @@ class PoseDetectionService {
 
       final visionSize = visionImageSize(inputImage);
 
+      final lk = pose.landmarks[PoseLandmarkType.leftKnee];
+      final rk = pose.landmarks[PoseLandmarkType.rightKnee];
+      final nose = pose.landmarks[PoseLandmarkType.nose];
+      final la = pose.landmarks[PoseLandmarkType.leftAnkle];
+      final ra = pose.landmarks[PoseLandmarkType.rightAnkle];
+
       return PoseSnapshot(
         leftShoulder: Offset(ls.x, ls.y),
         rightShoulder: Offset(rs.x, rs.y),
         leftHip: Offset(lh.x, lh.y),
         rightHip: Offset(rh.x, rh.y),
+        nose: nose != null && nose.likelihood >= 0.5
+            ? Offset(nose.x, nose.y)
+            : null,
+        leftKnee: lk != null && lk.likelihood >= 0.5
+            ? Offset(lk.x, lk.y)
+            : null,
+        rightKnee: rk != null && rk.likelihood >= 0.5
+            ? Offset(rk.x, rk.y)
+            : null,
+        leftAnkle: la != null && la.likelihood >= 0.5
+            ? Offset(la.x, la.y)
+            : null,
+        rightAnkle: ra != null && ra.likelihood >= 0.5
+            ? Offset(ra.x, ra.y)
+            : null,
         imageWidth: visionSize.width,
         imageHeight: visionSize.height,
       );

@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -56,6 +58,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         try {
           await user.updatePassword(newPassword);
         } on FirebaseAuthException catch (e) {
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Password update failed: ${e.message ?? e.code}'),
@@ -63,6 +66,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           );
           return;
         } catch (e) {
+          if (!context.mounted) return;
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('Password update failed: $e')));
@@ -72,15 +76,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       await user.reload();
 
+      if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Profile updated')));
       Navigator.of(context).pop();
     } on FirebaseAuthException catch (e) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Update failed: ${e.message ?? e.code}')),
       );
     } catch (e) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Update failed: $e')));
@@ -96,20 +103,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Edit Profile'),
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      title: const Text(
+        'Edit Profile',
+        style: TextStyle(
+          fontWeight: FontWeight.w800,
+          color: AppColors.textPrimary,
+        ),
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: 'Name'),
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                prefixIcon: Icon(Icons.person_outline_rounded),
+              ),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 14),
             TextField(
               controller: _passwordController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'New password (leave blank to keep)',
+                prefixIcon: Icon(Icons.lock_outline_rounded),
               ),
               obscureText: true,
             ),
@@ -119,12 +140,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: Text('Cancel'),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
         ),
         ElevatedButton(
           onPressed: _saving ? null : () => _saveChanges(context),
           child: _saving
-              ? SizedBox(
+              ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
@@ -132,7 +156,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     color: Colors.white,
                   ),
                 )
-              : Text('Save'),
+              : const Text('Save'),
         ),
       ],
     );

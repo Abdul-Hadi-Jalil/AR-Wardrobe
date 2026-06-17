@@ -1,8 +1,12 @@
 import 'package:ar_wardrobe_frontend/screens/edit_profile_screen.dart';
 import 'package:ar_wardrobe_frontend/screens/orders_screen.dart';
+import 'package:ar_wardrobe_frontend/screens/saved_outfits_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import '../services/firestore_service.dart';
+import '../theme/app_theme.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -25,7 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadCounts() async {
     final savedOutfits = await _firestoreService.getSavedOutfits().first;
     final orders = await _firestoreService.getOrders().first;
-    
+
     if (mounted) {
       setState(() {
         _savedItemsCount = savedOutfits.length;
@@ -37,7 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.background,
       body: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.userChanges(),
         builder: (context, snapshot) {
@@ -56,95 +60,109 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           return SingleChildScrollView(
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                // Header Section with Profile
                 Container(
                   width: double.infinity,
+                  padding: EdgeInsets.only(top: 60.h, bottom: 56.h),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2ACAEA),
+                    gradient: AppGradients.brand,
                     borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(30),
+                      bottom: Radius.circular(36.r),
                     ),
                   ),
                   child: Column(
                     children: [
-                      SizedBox(height: 60),
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.white,
-                        child: Text(
-                          initials,
-                          style: TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
+                      Container(
+                        padding: EdgeInsets.all(4.w),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            width: 2,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: 46.r,
+                          backgroundColor: Colors.white,
+                          child: Text(
+                            initials,
+                            style: TextStyle(
+                              fontSize: 34.sp,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: 16.h),
                       Text(
                         displayName,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      SizedBox(height: 4.h),
                       Text(
                         email,
                         style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 14.sp,
                         ),
                       ),
-                      SizedBox(height: 40),
                     ],
                   ),
                 ),
-
-                // Stats Section
-                Container(
-                  transform: Matrix4.translationValues(0, -20, 0),
-                  margin: EdgeInsets.symmetric(horizontal: 20),
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildStatItem('Saved Items', '$_savedItemsCount'),
-                      _buildStatItem('Orders', '$_ordersCount'),
-                    ],
+                Transform.translate(
+                  offset: Offset(0, -28.h),
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 20.w),
+                    padding: EdgeInsets.symmetric(vertical: 20.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      boxShadow: AppShadows.card,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatItem(
+                              'Saved Items', '$_savedItemsCount'),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 36.h,
+                          color: AppColors.border,
+                        ),
+                        Expanded(
+                          child: _buildStatItem('Orders', '$_ordersCount'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-
-                // Menu Items
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 120.h),
                   child: Column(
                     children: [
                       _buildMenuItem(
-                        icon: Icons.favorite,
-                        iconColor: Colors.red,
+                        icon: Icons.favorite_rounded,
+                        iconColor: const Color(0xFFFF5C8A),
                         title: 'Saved Outfits',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SavedOutfitsScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: 14.h),
                       _buildMenuItem(
-                        icon: Icons.shopping_bag,
-                        iconColor: const Color(0xFF2ACAEA),
+                        icon: Icons.shopping_bag_rounded,
+                        iconColor: AppColors.accent,
                         title: 'My Orders',
                         onTap: () {
                           Navigator.push(
@@ -155,32 +173,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
                         },
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: 14.h),
                       _buildMenuItem(
-                        icon: Icons.edit,
-                        iconColor: Colors.blue,
+                        icon: Icons.edit_rounded,
+                        iconColor: AppColors.primary,
                         title: 'Edit Profile',
-                        onTap: () {
-                          // Navigate to edit profile screen
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => EditProfileScreen(),
-                            ),
+                        onTap: () async {
+                          await showDialog(
+                            context: context,
+                            builder: (_) => const EditProfileScreen(),
                           );
                         },
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: 14.h),
                       _buildMenuItem(
-                        icon: Icons.logout,
-                        iconColor: Colors.grey,
+                        icon: Icons.logout_rounded,
+                        iconColor: AppColors.textSecondary,
                         title: 'Logout',
                         onTap: () {
-                          // log out from firebase auth
                           FirebaseAuth.instance.signOut();
                         },
                       ),
-                      SizedBox(height: 100), // Bottom padding
                     ],
                   ),
                 ),
@@ -198,17 +211,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Text(
           value,
           style: TextStyle(
-            color: Colors.black,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            fontSize: 24.sp,
+            fontWeight: FontWeight.w800,
           ),
         ),
-        SizedBox(height: 4),
+        SizedBox(height: 4.h),
         Text(
           label,
           style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
+            color: AppColors.textSecondary,
+            fontSize: 13.sp,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -222,42 +235,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String title,
     required VoidCallback onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: iconColor, size: 24),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          color: Colors.grey[400],
-          size: 16,
-        ),
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            boxShadow: AppShadows.soft,
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+            child: Row(
+              children: [
+                Container(
+                  width: 42.w,
+                  height: 42.w,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 22.sp),
+                ),
+                SizedBox(width: 14.w),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    color: AppColors.textMuted, size: 15.sp),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

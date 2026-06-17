@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../models/clothing_item.dart';
 import '../painters/overlay_painter.dart';
+import '../utils/clothing_image_loader.dart';
 import '../services/camera_service.dart';
 import '../services/face_detection_service.dart';
 import '../services/pose_detection_service.dart';
@@ -61,7 +62,10 @@ class _CameraScreenState extends State<CameraScreen> {
     }
 
     try {
-      final image = await OverlayPainter.loadClothingImage(widget.item.assetPath);
+      final image = await ClothingImageLoader.load(
+        widget.item.assetPath,
+        widget.item.category,
+      );
       await _cameraService.initialize();
       if (!mounted) return;
 
@@ -127,6 +131,7 @@ class _CameraScreenState extends State<CameraScreen> {
       ClothingCategory.glasses => 'Point camera at your face for glasses',
       ClothingCategory.hats => 'Point camera at your face for hat placement',
       ClothingCategory.shirts => 'Point camera at your upper body',
+      ClothingCategory.pants => 'Step back so hips and legs are visible',
     };
   }
 

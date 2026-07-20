@@ -11,7 +11,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await ProductPrices.loadPrices();
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: '.env', isOptional: true);
+  } catch (_) {}
   runApp(const ARWardrobeApp());
 }
 

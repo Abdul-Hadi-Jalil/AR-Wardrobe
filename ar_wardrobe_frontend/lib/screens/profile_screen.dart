@@ -1,6 +1,7 @@
 import 'package:ar_wardrobe_frontend/screens/edit_profile_screen.dart';
 import 'package:ar_wardrobe_frontend/screens/orders_screen.dart';
 import 'package:ar_wardrobe_frontend/screens/saved_outfits_screen.dart';
+import 'package:ar_wardrobe_frontend/screens/terms_consent_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -182,6 +183,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           await showDialog(
                             context: context,
                             builder: (_) => const EditProfileScreen(),
+                          );
+                        },
+                      ),
+                      SizedBox(height: 14.h),
+                      _buildMenuItem(
+                        icon: Icons.privacy_tip_outlined,
+                        iconColor: const Color(0xFF6366F1),
+                        title: 'Terms & Privacy',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TermsConsentScreen(),
+                            ),
                           );
                         },
                       ),

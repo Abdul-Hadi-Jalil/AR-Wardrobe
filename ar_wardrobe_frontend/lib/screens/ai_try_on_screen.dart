@@ -8,6 +8,7 @@ import '../models/clothing_item.dart';
 import '../services/fashn_service.dart';
 import '../services/nano_banana_service.dart';
 import '../services/try_on_result.dart';
+import '../screens/terms_consent_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
 
@@ -137,6 +138,10 @@ class _AiTryOnScreenState extends State<AiTryOnScreen> {
 
   Future<void> _generate() async {
     if (_personBytes == null || _clothBytes == null) return;
+
+    final consent = await ensurePhotoConsent(context);
+    if (!consent || !mounted) return;
+
     FocusScope.of(context).unfocus();
     setState(() {
       _loading = true;

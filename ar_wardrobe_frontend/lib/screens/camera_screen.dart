@@ -8,11 +8,12 @@ import 'package:provider/provider.dart';
 
 import '../models/clothing_item.dart';
 import '../painters/overlay_painter.dart';
-import '../utils/clothing_image_loader.dart';
+import '../screens/terms_consent_screen.dart';
 import '../services/camera_service.dart';
 import '../services/face_detection_service.dart';
 import '../services/pose_detection_service.dart';
 import '../state/tryon_state.dart';
+import '../utils/clothing_image_loader.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key, required this.item});
@@ -260,7 +261,10 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 }
 
-void openTryOnCamera(BuildContext context, ClothingItem item) {
+Future<void> openTryOnCamera(BuildContext context, ClothingItem item) async {
+  final ok = await ensurePhotoConsent(context);
+  if (!ok || !context.mounted) return;
+
   Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (_) => ChangeNotifierProvider(

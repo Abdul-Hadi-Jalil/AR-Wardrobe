@@ -37,6 +37,5 @@ class ApiConfig {
   /// FASHN API base URL.
   static const String fashnBaseUrl = 'https://api.fashn.ai/v1';
 
-  static bool get hasFashnKey =>
-      fashnApiKey.isNotEmpty && fashnApiKey != dotenv.env['FASHN_API_KEY'];
+  static bool get hasFashnKey => fashnApiKey.isNotEmpty;
 }

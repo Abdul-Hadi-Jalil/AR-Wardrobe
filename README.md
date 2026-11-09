@@ -4,6 +4,14 @@ A Flutter virtual wardrobe prototype combining camera-based clothing overlays, a
 
 It demonstrates native camera/ML integration alongside asynchronous image-generation APIs and Firebase-backed account and shopping flows.
 
+## Mobile interface preview
+
+The mobile launch experience establishes the AR Wardrobe identity and its “Try Before You Buy” virtual-fitting proposition.
+
+<p align="center">
+  <img src="docs/images/ar-wardrobe-mobile.png" alt="AR Wardrobe mobile launch interface" width="360">
+</p>
+
 ## Features and stack
 
 - Live camera, face/pose detection, and custom overlay painting.
